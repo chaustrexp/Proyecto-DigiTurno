@@ -41,7 +41,7 @@
     <header class="bg-white px-6 py-2.5 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
         <!-- Logo -->
         <div class="flex items-center space-x-3 w-1/4">
-            <img src="{{ asset('images/logo.jpeg') }}" class="h-7 w-auto object-contain" alt="SENA Logo">
+            <img src="{{ asset('images/LOGO APE_color.png') }}" class="h-7 w-auto object-contain" alt="SENA Logo">
             <div class="h-5 w-px bg-gray-100"></div>
             <div>
                 <h1 class="text-sm font-poppins font-bold text-gray-900 leading-tight">SENA APE</h1>

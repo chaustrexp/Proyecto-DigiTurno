@@ -45,7 +45,7 @@
         <div class="p-8 lg:p-10">
             <!-- Header -->
             <div class="text-center mb-8">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="Logo SENA" class="h-16 mx-auto mb-3 drop-shadow-sm">
+                <img src="{{ asset('images/LOGO APE_color.png') }}" alt="Logo SENA" class="h-16 mx-auto mb-3 drop-shadow-sm">
                 <h2 class="text-3xl font-poppins font-black text-sena-navy tracking-tight">Registro de Asesor</h2>
                 <p class="text-slate-500 font-medium text-sm mt-1">Completa los datos para crear tu cuenta</p>
             </div>

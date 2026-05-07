@@ -45,7 +45,7 @@
         <div class="p-8 lg:p-10">
             <!-- Header -->
             <div class="flex flex-col items-center mb-8">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="Logo SENA" class="h-20 mx-auto mb-3 drop-shadow-md">
+                <img src="{{ asset('images/LOGO APE_color.png') }}" alt="Logo SENA" class="h-20 mx-auto mb-3 drop-shadow-md">
                 <h2 class="text-3xl font-poppins font-black text-sena-navy tracking-tighter">Registro Coordinador</h2>
                 <p class="text-slate-500 font-bold text-xs uppercase tracking-[0.3em] mt-1 text-center">Portal de Gestión Administrativa</p>
             </div>

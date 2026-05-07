@@ -92,7 +92,7 @@
         <div class="relative z-10">
             <!-- Branding -->
             <div class="text-center mb-8">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="Logo SENA" class="h-20 mx-auto mb-4 drop-shadow-sm">
+                <img src="{{ asset('images/LOGO APE_color.png') }}" alt="Logo SENA" class="h-14 mx-auto mb-4 drop-shadow-sm">
                 <h2 class="text-3xl font-poppins font-black text-sena-navy tracking-tight">Acceso Asesores</h2>
                 <p class="text-slate-500 font-medium text-sm mt-2 italic">Forjando el futuro del talento colombiano</p>
             </div>

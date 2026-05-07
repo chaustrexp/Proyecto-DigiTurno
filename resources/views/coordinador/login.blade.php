@@ -111,7 +111,7 @@
         <div class="p-8 lg:p-14">
             <!-- Admin Header -->
             <div class="flex flex-col items-center mb-10">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="Logo SENA" class="h-24 mx-auto mb-4 drop-shadow-md">
+                <img src="{{ asset('images/LOGO APE_color.png') }}" alt="Logo SENA" class="h-16 mx-auto mb-4 drop-shadow-md">
                 <h2 class="text-4xl font-poppins font-black text-sena-navy tracking-tighter">Acceso Coordinación</h2>
                 <p class="text-slate-500 font-bold text-xs uppercase tracking-[0.3em] mt-2 text-center">Portal de
                     Gestión Administrativa</p>

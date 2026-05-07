@@ -49,13 +49,9 @@
     <!-- Sidebar -->
     <aside class="w-56 bg-white flex flex-col border-r border-gray-100 shrink-0 z-30">
         <div class="px-5 py-6 flex flex-col space-y-3">
-            <div class="flex items-center space-x-2">
-                <img src="{{ asset('images/logo.jpeg') }}" class="h-8 w-auto object-contain" alt="SENA Logo">
-                <div class="h-6 w-px bg-gray-100 mx-1"></div>
-                <div>
-                    <h1 class="text-sm font-poppins font-black text-gray-900 tracking-tight leading-none uppercase">SENA APE</h1>
-                    <p class="text-[8px] font-bold text-sena-blue uppercase tracking-wider mt-0.5 leading-none">Sistema de Gestión de Turnos</p>
-                </div>
+            <div class="flex flex-col items-center space-y-1">
+                <img src="{{ asset('images/LOGO APE_color.png') }}" class="h-10 w-auto object-contain" alt="SENA Logo">
+                <p class="text-[8px] font-bold text-sena-blue uppercase tracking-wider leading-none text-center">Sistema de Gestión de Turnos</p>
             </div>
         </div>
 
