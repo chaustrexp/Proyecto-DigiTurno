@@ -71,10 +71,21 @@
 <!-- Alerts -->
 <div class="fixed top-8 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-2xl px-4 space-y-4">
     @if(session('success'))
-    <div class="bg-emerald-500 text-white p-6 rounded-[2rem] shadow-2xl flex items-center space-x-4 animate-[bounce_1s_ease-in-out_1] border-4 border-white">
+    <div id="kiosco-success-alert" class="bg-emerald-500 text-white p-6 rounded-[2rem] shadow-2xl flex items-center space-x-4 animate-[bounce_1s_ease-in-out_1] border-4 border-white">
         <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-check"></i></div>
         <div><p class="font-black uppercase tracking-widest text-xs">¡Turno Generado exitosamente!</p><p class="text-lg font-poppins font-black">{{ session('success') }}</p></div>
     </div>
+    <script>
+        setTimeout(function() {
+            var el = document.getElementById('kiosco-success-alert');
+            if (el) {
+                el.style.transition = 'all 0.5s ease-out';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-20px)';
+                setTimeout(function() { el.remove(); }, 500);
+            }
+        }, 5000);
+    </script>
     @endif
     @if(session('error'))
     <div id="kiosco-error-alert" class="bg-rose-500 text-white p-4 rounded-2xl shadow-2xl flex items-center space-x-3 border-2 border-white">
@@ -89,7 +100,7 @@
                 el.style.opacity = '0';
                 setTimeout(function() { el.remove(); }, 500);
             }
-        }, 2000);
+        }, 5000);
     </script>
     @endif
 </div>
@@ -325,36 +336,77 @@
                 <h3 class="text-2xl font-poppins font-black text-[#1e293b] tracking-tight">Canal de <span class="text-sena-500">Entrega</span></h3>
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-widest">¿Por qué medio desea recibir su turno?</p>
             </div>
-            <div class="grid grid-cols-4 gap-2.5 w-full">
-                @php $methods = [['id'=>'SMS','icon'=>'fa-comment-sms','title'=>'SMS','fab'=>false],['id'=>'WhatsApp','icon'=>'fa-whatsapp','title'=>'WhatsApp','fab'=>true],['id'=>'Email','icon'=>'fa-envelope','title'=>'Email','fab'=>false],['id'=>'QR','icon'=>'fa-qrcode','title'=>'Código QR','fab'=>false]]; @endphp
+            <div class="grid grid-cols-3 gap-4 w-full max-w-2xl mx-auto">
+                @php $methods = [
+                    ['id'=>'QR','icon'=>'fa-qrcode','title'=>'Tiquete Digital','fab'=>false, 'desc' => 'Código QR Offline'],
+                    ['id'=>'SMS','icon'=>'fa-comment-sms','title'=>'Mensaje Texto','fab'=>false, 'desc' => 'Celulares Básicos'],
+                    ['id'=>'Fisico','icon'=>'fa-print','title'=>'Tiquete Físico','fab'=>false, 'desc' => 'Personas 3ra Edad']
+                ]; @endphp
                 @foreach($methods as $m)
-                <button type="button" onclick="selectChannel('{{ $m['id'] }}', this); playKey();" class="receive-card bg-white p-3.5 rounded-xl border-2 border-gray-100 transition-all duration-300 flex flex-col items-center gap-2 hover:border-sena-500 hover:shadow-md active:scale-95">
-                    <div class="w-10 h-10 bg-gray-50 text-gray-400 rounded-lg flex items-center justify-center text-xl transition-colors">
+                <button type="button" onclick="selectChannel('{{ $m['id'] }}', this); playKey();" class="receive-card bg-white p-5 rounded-2xl border-2 border-gray-100 transition-all duration-300 flex flex-col items-center gap-3 hover:border-sena-500 hover:shadow-xl active:scale-95 group">
+                    <div class="w-14 h-14 bg-gray-50 text-gray-400 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110">
                         <i class="{{ $m['fab'] ? 'fa-brands' : 'fa-solid' }} {{ $m['icon'] }}"></i>
                     </div>
-                    <span class="text-[10px] font-black text-slate-700 uppercase tracking-widest">{{ $m['title'] }}</span>
+                    <div class="text-center">
+                        <span class="block text-xs font-black text-slate-800 uppercase tracking-widest">{{ $m['title'] }}</span>
+                        <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{{ $m['desc'] }}</span>
+                    </div>
                 </button>
                 @endforeach
             </div>
             <div id="channel-panel" class="w-full hidden">
-                <div id="panel-WhatsApp" class="channel-content hidden bg-green-50 border border-green-200 rounded-xl p-4 text-center space-y-2">
-                    <i class="fa-brands fa-whatsapp text-3xl text-green-500"></i>
-                    <p class="text-xs font-bold text-slate-600">Se enviará la confirmación al número <span id="wa-number" class="text-green-600 font-black"></span></p>
-                </div>
-                <div id="panel-Email" class="channel-content hidden bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
-                    <p class="text-xs font-bold text-slate-600 text-center">Ingrese su correo electrónico</p>
-                    <input type="email" id="email-input" name="pers_email" placeholder="ejemplo@correo.com" class="w-full bg-white border-2 border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:border-sena-500 transition-all text-center">
-                </div>
-                <div id="panel-QR" class="channel-content hidden bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center space-y-2">
-                    <p class="text-xs font-bold text-slate-600">Escanee este código QR con su celular</p>
-                    <div id="qr-container" class="w-32 h-32 bg-white rounded-xl flex items-center justify-center border-2 border-slate-200 shadow-inner">
-                        <img id="qr-image" src="" alt="QR" class="w-full h-full rounded-xl hidden">
-                        <i class="fa-solid fa-qrcode text-4xl text-slate-300" id="qr-placeholder"></i>
+                <div id="panel-QR" class="channel-content hidden bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex flex-col items-center space-y-3 shadow-inner">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 bg-sena-500 rounded-full animate-ping"></span>
+                        <p class="text-[10px] font-black text-sena-500 uppercase tracking-widest">Tiquete Digital Offline</p>
                     </div>
+                    <div id="qr-container" class="w-48 h-48 bg-white flex items-center justify-center border-4 border-white shadow-xl">
+                        <img id="qr-image" src="" alt="QR" class="w-full h-full hidden">
+                        <i class="fa-solid fa-qrcode text-5xl text-slate-100" id="qr-placeholder"></i>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-500 max-w-xs text-center">Escanee para guardar su turno como texto en su celular (No requiere internet).</p>
                 </div>
-                <div id="panel-SMS" class="channel-content hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-1">
-                    <i class="fa-solid fa-comment-sms text-2xl text-sena-500"></i>
-                    <p class="text-xs font-bold text-slate-600">Se enviará un SMS al número <span id="sms-number" class="text-sena-500 font-black"></span></p>
+                <div id="panel-SMS" class="channel-content hidden bg-slate-50 border border-slate-200 rounded-[2rem] p-6 text-center space-y-3 shadow-inner">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm text-sena-500 text-2xl">
+                        <i class="fa-solid fa-comment-sms"></i>
+                    </div>
+                    <p class="text-xs font-bold text-slate-600">Se enviará un mensaje de texto al:<br><span id="sms-number" class="text-sena-500 font-black text-lg"></span></p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Ideal para celulares no inteligentes</p>
+                </div>
+                <div id="panel-Fisico" class="channel-content hidden bg-slate-50 border border-slate-200 rounded-[2rem] p-6 text-center space-y-4 shadow-inner">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm text-sena-orange text-2xl">
+                        <i class="fa-solid fa-print"></i>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <p class="text-xs font-black text-slate-700 uppercase tracking-tight">Vista Previa del Tiquete</p>
+                        <p class="text-[9px] font-bold text-slate-400">Así se verá su turno impreso</p>
+                    </div>
+
+                    <!-- TICKET PREVIEW -->
+                    <div class="bg-white w-full max-w-[200px] mx-auto p-4 shadow-xl border-t-4 border-dashed border-slate-200 rounded-b-lg text-left font-mono">
+                        <div class="flex justify-center mb-3">
+                            <img src="{{ asset('images/LOGO APE_color.png') }}" class="h-8 grayscale opacity-70">
+                        </div>
+                        <div class="border-b border-dashed border-slate-300 pb-2 text-center">
+                            <p class="text-[8px] font-bold">SENA - APE</p>
+                            <p class="text-[7px]">Agencia Pública de Empleo</p>
+                        </div>
+                        <div class="py-4 text-center">
+                            <p class="text-[8px] font-bold mb-1">SU TURNO ES:</p>
+                            <div class="text-3xl font-black text-slate-900" id="preview-turno">A-00</div>
+                            <p class="text-[7px] mt-2" id="preview-fecha">{{ date('d/m/Y H:i') }}</p>
+                        </div>
+                        <div class="border-t border-dashed border-slate-300 pt-2 text-[6px] text-center uppercase">
+                            <p>Por favor espere su llamado</p>
+                            <p>¡Gracias por su visita!</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-2 text-sena-orange animate-pulse pt-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Listo para imprimir</span>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2.5 w-full">
@@ -379,7 +431,7 @@
         <input type="hidden" name="tur_tipo"           id="hidden_tur_tipo"           value="{{ old('tur_tipo','General') }}">
         <input type="hidden" name="tur_servicio"       id="hidden_tur_servicio"       value="{{ old('tur_servicio') }}">
         <input type="hidden" name="tur_tipo_atencion"  id="hidden_tur_tipo_atencion"  value="{{ old('tur_tipo_atencion') }}">
-        <input type="hidden" name="receive_method"     id="hidden_receive_method"     value="{{ old('receive_method','SMS') }}">
+        <input type="hidden" name="receive_method"     id="hidden_receive_method"     value="">
     </form>
 
     <!-- Footer (Fixed Bottom) -->
@@ -426,11 +478,14 @@
 
         {{-- Panel derecho --}}
         <div class="sm:w-3/5 p-5 flex flex-col items-center space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Su turno asignado es</p>
-
             {{-- Número de turno --}}
-            <div class="bg-slate-50 border-2 border-slate-100 rounded-xl px-6 py-3 w-full text-center shadow-inner">
+            <div class="bg-slate-50 border-2 border-slate-100 rounded-xl px-6 py-4 w-full text-center shadow-inner space-y-1">
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Su turno asignado es</div>
                 <div class="text-[2.8rem] font-poppins font-black text-sena-500 tracking-tight leading-none whitespace-nowrap">{{ $turnoNumero }}</div>
+                <div class="pt-2 border-t border-slate-200 mt-2">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Generado el</p>
+                    <p class="text-[10px] font-bold text-slate-700">{{ date('d/m/Y') }} <span class="text-sena-500">{{ date('h:i:s A') }}</span></p>
+                </div>
             </div>
 
             {{-- Advertencia APE --}}
@@ -447,9 +502,16 @@
             {{-- QR --}}
             <div class="flex flex-col items-center space-y-1">
                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Escanee para guardar su turno</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode('SENA APE - Turno: '.$turnoNumero) }}"
+                @php 
+                    $f = date('d/m/y');
+                    $h = date('h:i A');
+                    $d = $turno->solicitante->persona->pers_doc ?? '';
+                    $simpleText = "SENA APE\n$turnoNumero\n$d\n$f $h";
+                    $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&ecc=L&qzone=4&data=".urlencode($simpleText);
+                @endphp
+                <img src="{{ $qrUrl }}"
                      alt="QR {{ $turnoNumero }}"
-                     class="w-24 h-24 rounded-xl border-2 border-slate-100 shadow-sm">
+                     class="w-28 h-28 border-2 border-slate-100 shadow-sm">
             </div>
 
             {{-- Instrucción --}}
@@ -481,7 +543,7 @@ function closeModal() {
     const modal = document.getElementById('successModal');
     if (modal) { modal.style.opacity='0'; modal.style.transition='opacity 0.5s ease-out'; setTimeout(()=>modal.remove(),500); }
 }
-setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,10000); },300);
+setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,5000); },300);
 </script>
 @endif
 
@@ -510,8 +572,8 @@ setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,10000); },300)
         const m = document.getElementById('errorModal');
         if (m) { m.style.transition='opacity 0.4s'; m.style.opacity='0'; setTimeout(()=>m.remove(),400); }
     }
-    // Auto-cierre en 2 segundos
-    setTimeout(cerrarErrorModal, 2000);
+    // Auto-cierre en 5 segundos
+    setTimeout(cerrarErrorModal, 5000);
 </script>
 @endif
 
@@ -526,7 +588,11 @@ setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,10000); },300)
                 </div>
                 <div>
                     <h3 class="text-white font-poppins font-black text-xl uppercase tracking-tight">Consultar Mi Turno</h3>
-                    <p class="text-white/60 text-[10px] font-bold uppercase tracking-widest">Válido para hoy</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-white/60 text-[10px] font-bold uppercase tracking-widest">Válido para hoy</p>
+                        <span class="text-white/40">|</span>
+                        <p class="text-sena-yellow text-[10px] font-black uppercase tracking-widest" id="consultar-clock">00:00:00 AM</p>
+                    </div>
                 </div>
             </div>
             <button onclick="closeConsultarModal()" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-white transition-colors">
@@ -849,12 +915,25 @@ function selectChannel(method, btn) {
     const panel = document.getElementById('panel-' + method); if (panel) panel.classList.remove('hidden');
     const phone = document.getElementById('hidden_pers_telefono').value || phoneNumber;
     const doc   = document.getElementById('hidden_pers_doc').value || docNumber;
-    if (method === 'WhatsApp') document.getElementById('wa-number').textContent = '+57 ' + phone;
-    if (method === 'SMS') document.getElementById('sms-number').textContent = '+57 ' + phone;
+    if (method === 'SMS') document.getElementById('sms-number').textContent = phone.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
     if (method === 'QR') {
-        const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent('SENA APE - Doc: ' + doc + ' | Tel: ' + phone);
+        const perfil = document.getElementById('hidden_tur_perfil').value || 'G';
+        const letra = perfil.charAt(0).toUpperCase();
+        const now = new Date();
+        const options = { timeZone: 'America/Bogota', hour12: true };
+        const fecha = new Intl.DateTimeFormat('es-CO', { ...options, day: '2-digit', month: '2-digit', year: '2-digit' }).format(now);
+        const hora = new Intl.DateTimeFormat('es-CO', { ...options, hour: '2-digit', minute: '2-digit' }).format(now);
+        const simpleText = `SENA APE\n${letra}-XX\n${doc}\n${fecha} ${hora}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&ecc=L&qzone=4&data=${encodeURIComponent(simpleText)}`;
         const img = document.getElementById('qr-image'); const placeholder = document.getElementById('qr-placeholder');
         img.src = qrUrl; img.classList.remove('hidden'); placeholder.classList.add('hidden');
+    }
+    if (method === 'Fisico') {
+        // En el preview no tenemos el turno real todavía porque no se ha guardado, 
+        // pero podemos mostrar un ejemplo dinámico con la categoría seleccionada
+        const perfil = document.getElementById('hidden_tur_perfil').value || 'G';
+        const letra = perfil.charAt(0).toUpperCase();
+        document.getElementById('preview-turno').textContent = letra + '-00';
     }
 }
 
@@ -901,17 +980,36 @@ function showEmergency() {
     </div>`;
     showKioscoModal('BOTÓN DE EMERGENCIA', 'ASISTENCIA INMEDIATA', body, 'fa-triangle-exclamation');
 }
-function updateClock() { const el = document.getElementById('kiosco-clock'); if (!el) return; const now = new Date(); el.textContent = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true }); }
+function updateClock() { 
+    const el = document.getElementById('kiosco-clock'); 
+    if (el) {
+        const now = new Date(); 
+        const horaStr = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
+        el.textContent = horaStr.toUpperCase(); 
+    }
+
+    const consultEl = document.getElementById('consultar-clock');
+    if (consultEl) {
+        const now = new Date();
+        const horaStr = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
+        consultEl.textContent = horaStr.toUpperCase();
+    }
+    
+    // Actualizar también el preview del tiquete físico si existe
+    const previewEl = document.getElementById('preview-fecha');
+    if (previewEl) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+        const timeStr = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+        previewEl.textContent = `${dateStr} ${timeStr}`;
+    }
+}
 setInterval(updateClock, 1000); updateClock();
 function validateForm() {
     document.getElementById('hidden_pers_doc').value = docNumber;
     document.getElementById('hidden_pers_telefono').value = phoneNumber;
     const method = document.getElementById('hidden_receive_method').value;
-    if (method === 'Email') {
-        const emailVal = document.getElementById('email-input').value.trim();
-        if (!emailVal || !emailVal.includes('@')) { alert("Por favor ingrese un correo electrónico válido."); return false; }
-        document.getElementById('hidden_pers_email').value = emailVal;
-    }
+    if (!method) { alert("Por favor seleccione un Canal de Entrega (QR, SMS o Físico)"); nextStep(6); return false; }
     if (!docNumber || docNumber.length < 5) { alert("Por favor ingrese un número de documento válido."); nextStep(4); return false; }
     return true;
 }

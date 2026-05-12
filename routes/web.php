@@ -15,6 +15,7 @@ Route::post('/turno/solicitar', [TurnoController::class, 'store'])
     ->name('turnos.store')
     ->middleware('throttle:kiosk');
 Route::get('/api/turno/consultar/{documento}', [ApiController::class, 'consultarTurno'])->name('api.turno.consultar');
+Route::get('/seguimiento/{documento}', [ApiController::class, 'seguimientoTurno'])->name('turno.seguimiento');
 
 // Pantalla
 Route::get('/pantalla', [PantallaController::class, 'index'])->name('pantalla.index');

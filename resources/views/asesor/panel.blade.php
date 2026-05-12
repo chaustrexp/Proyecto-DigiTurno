@@ -1,4 +1,4 @@
-@extends('layouts.asesor')
+ï»¿@extends('layouts.asesor')
 
 @section('title', 'Dashboard - SENA APE')
 
@@ -22,10 +22,10 @@
                         <p class="text-[9px] font-black text-white/80 uppercase tracking-[0.3em]">Atendiendo Ahora</p>
                         <h2 class="text-4xl font-black text-white tracking-tighter">{{ $atencion->turno->tur_numero }}</h2>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="text-[8px] font-black text-white/60 uppercase tracking-widest">Módulo</span>
+                            <span class="text-[8px] font-black text-white/60 uppercase tracking-widest">MÃ³dulo</span>
                             <span class="bg-white/20 text-white text-[9px] font-black px-2 py-0.5 rounded-lg" id="modulo-badge">{{ sprintf('%02d', $asesor->ase_id ?? '01') }}</span>
-                            <span class="text-white/40 text-[9px]">·</span>
-                            <span class="text-[8px] font-black text-white/70 uppercase tracking-widest">{{ $asesor->ase_tipo_asesor === 'OV' ? 'Orientador Víctimas' : ($asesor->ase_tipo_asesor === 'AT' ? 'Asesor Total' : 'Orientador Técnico') }}</span>
+                            <span class="text-white/40 text-[9px]">Â·</span>
+                            <span class="text-[8px] font-black text-white/70 uppercase tracking-widest">{{ $asesor->ase_tipo_asesor === 'OV' ? 'Orientador VÃ­ctimas' : ($asesor->ase_tipo_asesor === 'AT' ? 'Asesor Total' : 'Orientador TÃ©cnico') }}</span>
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-2">
@@ -33,7 +33,7 @@
                             <p class="text-[10px] font-black text-white tracking-widest" id="atencion-timer" data-start="{{ \Carbon\Carbon::parse($atencion->atnc_hora_inicio)->timestamp }}">00:00:00</p>
                         </div>
                         <div class="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1 border border-white/20">
-                            <span class="text-[8px] font-black text-white/60 uppercase mr-1">Módulo</span>
+                            <span class="text-[8px] font-black text-white/60 uppercase mr-1">MÃ³dulo</span>
                             <button type="button" onclick="cambiarModulo(-1)" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90">
                                 <i class="fa-solid fa-chevron-left text-white text-[9px]"></i>
                             </button>
@@ -54,7 +54,7 @@
                         </h3>
                         <p class="text-sm font-bold text-white/70 mt-1">
                             {{ $atencion->turno->solicitante?->persona?->pers_tipodoc ?? 'DOC' }} 
-                            {{ $atencion->turno->solicitante?->persona?->pers_doc ?? '—' }}
+                            {{ $atencion->turno->solicitante?->persona?->pers_doc ?? 'â€”' }}
                         </p>
                     </div>
                     <button onclick="toggleEditModal(true)" class="bg-white/10 hover:bg-white/20 p-3 rounded-xl border border-white/20 transition-all group active:scale-95" title="Editar datos del ciudadano">
@@ -62,15 +62,15 @@
                     </button>
                 </div>
 
-                {{-- Mientras hay atención activa: solo Finalizar y Ausente --}}
+                {{-- Mientras hay atenciÃ³n activa: solo Finalizar y Ausente --}}
                 <div class="mt-6 relative z-10 space-y-3">
                     {{-- Campo de observaciones --}}
                     <div>
                         <label class="block text-[9px] font-black text-white/70 uppercase tracking-widest mb-1.5">
-                            <i class="fa-solid fa-clipboard-list mr-1"></i> Conclusión / Observaciones del Trámite
+                            <i class="fa-solid fa-clipboard-list mr-1"></i> ConclusiÃ³n / Observaciones del TrÃ¡mite
                         </label>
                         <textarea id="obs-textarea" rows="2"
-                            placeholder="Ej: Se orientó al ciudadano sobre inscripción SENA, se entregó documentación..."
+                            placeholder="Ej: Se orientÃ³ al ciudadano sobre inscripciÃ³n SENA, se entregÃ³ documentaciÃ³n..."
                             class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/50 resize-none transition-all"
                         ></textarea>
                     </div>
@@ -82,7 +82,7 @@
                                 onclick="submitConObs('finalizar', {{ $atencion->atnc_id }})"
                                 class="w-full bg-white text-sena-blue font-extrabold py-3.5 rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center space-x-2 shadow-lg active:scale-95">
                                 <i class="fa-solid fa-circle-check text-sm"></i>
-                                <span class="uppercase tracking-widest text-xs">Finalizar Atención</span>
+                                <span class="uppercase tracking-widest text-xs">Finalizar AtenciÃ³n</span>
                             </button>
                         </form>
                         <form id="form-ausente-{{ $atencion->atnc_id }}" action="{{ route('asesor.ausente', $atencion->atnc_id) }}" method="POST">
@@ -106,7 +106,7 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-black text-gray-900 italic">Esperando Ciudadano...</h3>
-                    <p class="text-sm font-medium text-gray-400 mt-2">Actualmente no tienes ninguna atención activa.</p>
+                    <p class="text-sm font-medium text-gray-400 mt-2">Actualmente no tienes ninguna atenciÃ³n activa.</p>
                 </div>
                 <form id="autoCallForm" action="{{ route('asesor.llamar') }}" method="POST" class="w-full max-w-xs">
                     @csrf
@@ -133,7 +133,7 @@
                     <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center text-base mb-3 group-hover:scale-110 transition-transform">
                         <i class="fa-solid fa-stopwatch"></i>
                     </div>
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tiempo atención</p>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tiempo atenciÃ³n</p>
                     <h4 class="text-3xl font-black text-gray-900">14 <span class="text-sm">min</span></h4>
                     <span class="text-[10px] font-black text-gray-400 mt-2 tracking-widest uppercase">Promedio</span>
                 </div>
@@ -165,9 +165,9 @@
 
                 <div class="space-y-10">
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100/50">
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trámite solicitado</p>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">TrÃ¡mite solicitado</p>
                         <h5 class="text-sm font-black text-gray-800 leading-snug">
-                            {{ $atencion->turno->tramite ?? 'Consultoría de Empleo y Formalización' }}
+                            {{ $atencion->turno->tramite ?? 'ConsultorÃ­a de Empleo y FormalizaciÃ³n' }}
                         </h5>
                     </div>
 
@@ -190,7 +190,7 @@
                     </div>
 
                     @if($atencion)
-                    {{-- Botón ausente eliminado aquí — ya está en la tarjeta principal --}}
+                    {{-- BotÃ³n ausente eliminado aquÃ­ â€” ya estÃ¡ en la tarjeta principal --}}
                     @endif
                 </div>
             </div>
@@ -202,12 +202,12 @@
                 <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
                     <div class="flex items-center space-x-3">
                         <i class="fa-solid fa-clock-rotate-left text-gray-400"></i>
-                        <h4 class="text-sm font-black text-gray-900 tracking-wide uppercase">Últimos Turnos</h4>
+                        <h4 class="text-sm font-black text-gray-900 tracking-wide uppercase">Ãšltimos Turnos</h4>
                     </div>
                 </div>
                 
                 <div class="space-y-6">
-                    @foreach([['num'=>'NIT-044', 'name'=>'Ana María Restrepo', 'time'=>'9:15 AM'],['num'=>'NIT-043', 'name'=>'Carlos Mario Úsuga', 'time'=>'8:58 AM'],['num'=>'NIT-042', 'name'=>'Elena Beltrán', 'time'=>'8:30 AM'],['num'=>'NIT-041', 'name'=>'Pedro Duarte', 'time'=>'8:12 AM']] as $t)
+                    @foreach([['num'=>'NIT-044', 'name'=>'Ana MarÃ­a Restrepo', 'time'=>'9:15 AM'],['num'=>'NIT-043', 'name'=>'Carlos Mario Ãšsuga', 'time'=>'8:58 AM'],['num'=>'NIT-042', 'name'=>'Elena BeltrÃ¡n', 'time'=>'8:30 AM'],['num'=>'NIT-041', 'name'=>'Pedro Duarte', 'time'=>'8:12 AM']] as $t)
                     <div class="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-2xl transition-all">
                         <div class="flex items-center space-x-4">
                             <div class="w-2 h-2 rounded-full bg-gray-200 group-hover:bg-sena-blue transition-colors"></div>
@@ -251,8 +251,8 @@
                     <div class="absolute inset-0 bg-white/20 rounded-[1.5rem] animate-pulse"></div>
                 </div>
                 
-                <h2 class="text-4xl lg:text-5xl font-black text-gray-900 tracking-tight mb-4">Atención en Pausa</h2>
-                <p class="text-sm lg:text-base font-medium text-gray-500 leading-relaxed mb-10 max-w-sm mx-auto md:mx-0">Actualmente te encuentras en tiempo de descanso programado. La asignación de turnos está temporalmente detenida.</p>
+                <h2 class="text-4xl lg:text-5xl font-black text-gray-900 tracking-tight mb-4">AtenciÃ³n en Pausa</h2>
+                <p class="text-sm lg:text-base font-medium text-gray-500 leading-relaxed mb-10 max-w-sm mx-auto md:mx-0">Actualmente te encuentras en tiempo de descanso programado. La asignaciÃ³n de turnos estÃ¡ temporalmente detenida.</p>
                 
                 <form action="{{ route('asesor.receso.finalizar') }}" method="POST" class="w-full md:w-max mx-auto md:mx-0">
                     @csrf
@@ -320,7 +320,7 @@
 @endif
 
 @if($atencion)
-    <!-- Modal de Edición de Ciudadano -->
+    <!-- Modal de EdiciÃ³n de Ciudadano -->
     <div id="editPersonaModal" class="hidden fixed inset-0 z-[100] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background Overlay -->
@@ -337,7 +337,7 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-black text-gray-900 leading-none">Editar Ciudadano</h3>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1.5">Corregir información del perfil</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1.5">Corregir informaciÃ³n del perfil</p>
                             </div>
                         </div>
                         <button onclick="toggleEditModal(false)" class="text-gray-300 hover:text-gray-500 transition-colors">
@@ -351,15 +351,15 @@
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo Doc</label>
                                 <select name="pers_tipodoc" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-sena-blue/20 focus:border-sena-blue outline-none transition-all">
-                                    <option value="CC" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'CC' ? 'selected' : '' }}>Cédula de Ciudadanía</option>
+                                    <option value="CC" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'CC' ? 'selected' : '' }}>CÃ©dula de CiudadanÃ­a</option>
                                     <option value="TI" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'TI' ? 'selected' : '' }}>Tarjeta de Identidad</option>
-                                    <option value="CE" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'CE' ? 'selected' : '' }}>Cédula de Extranjería</option>
+                                    <option value="CE" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'CE' ? 'selected' : '' }}>CÃ©dula de ExtranjerÃ­a</option>
                                     <option value="PEP" {{ ($atencion->turno->solicitante?->persona?->pers_tipodoc ?? '') == 'PEP' ? 'selected' : '' }}>PEP</option>
                                 </select>
                             </div>
                             <div class="space-y-1.5 opacity-60">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Documento</label>
-                                <input type="text" value="{{ $atencion->turno->solicitante?->persona?->pers_doc ?? '—' }}" disabled class="w-full bg-gray-100 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-500 cursor-not-allowed">
+                                <input type="text" value="{{ $atencion->turno->solicitante?->persona?->pers_doc ?? 'â€”' }}" disabled class="w-full bg-gray-100 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-500 cursor-not-allowed">
                             </div>
                         </div>
 
@@ -374,7 +374,7 @@
                         </div>
 
                         <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Teléfono / Celular</label>
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">TelÃ©fono / Celular</label>
                             <input type="text" name="pers_telefono" value="{{ $atencion->turno->solicitante?->persona?->pers_telefono ?? '' }}" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-sena-blue/20 focus:border-sena-blue outline-none transition-all" placeholder="Ej: 3001234567">
                         </div>
 
@@ -396,7 +396,7 @@
 
 @section('scripts')
 <script>
-    // Cronómetro de atención
+    // CronÃ³metro de atenciÃ³n
     const timerElement = document.getElementById('atencion-timer');
     if (timerElement && timerElement.dataset.start) {
         const startTime = parseInt(timerElement.dataset.start);
@@ -413,7 +413,7 @@
         }, 1000);
     }
 
-    // Cronómetro de pausa (Persistente con localStorage)
+    // CronÃ³metro de pausa (Persistente con localStorage)
     const pauseDisplay = document.getElementById('pause-timer-display');
     if (pauseDisplay) {
         let pauseStartTime = localStorage.getItem('ape_pause_start');
@@ -438,7 +438,7 @@
         }, 1000);
     }
 
-    // Actualización de tiempo relativo de llegada
+    // ActualizaciÃ³n de tiempo relativo de llegada
     const arrivalElement = document.getElementById('arrival-relative-time');
     if (arrivalElement) {
         const arrivalTimestamp = parseInt(arrivalElement.dataset.arrival);
@@ -471,7 +471,7 @@
 
 
 
-    // --- OBSERVACIONES DEL TRÁMITE (CU-02) ---
+    // --- OBSERVACIONES DEL TRÃMITE (CU-02) ---
     function submitConObs(tipo, atncId) {
         const obs = document.getElementById('obs-textarea');
         const val = obs ? obs.value.trim() : '';
@@ -480,7 +480,7 @@
         const form = document.getElementById('form-' + tipo + '-' + atncId);
         if (form) form.submit();
     }
-    // --- SELECTOR DE MÓDULO ---
+    // --- SELECTOR DE MÃ“DULO ---
     let moduloActual = parseInt('{{ $asesor->ase_id ?? 1 }}') || 1;
     const moduloMin = 1;
     const moduloMax = 20;
@@ -492,7 +492,7 @@
         const formatted = String(moduloActual).padStart(2, '0');
         if (display) display.textContent = formatted;
         if (badge) badge.textContent = formatted;
-        // Guardar en sesión via fetch silencioso (opcional)
+        // Guardar en sesiÃ³n via fetch silencioso (opcional)
         fetch('/asesor/modulo/' + moduloActual, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' } }).catch(() => {});
     }
     function toggleEditModal(show) {
@@ -537,9 +537,9 @@
         });
     }
 
-    // SINCRONIZACIÓN ENTRE ASESORES (Auto-refresco de cola)
-    // Refresca la página cada 20 segundos para mantener la lista de espera sincronizada
-    // Solo si el modal de edición no está abierto para no interrumpir al usuario
+    // SINCRONIZACIÃ“N ENTRE ASESORES (Auto-refresco de cola)
+    // Refresca la pÃ¡gina cada 20 segundos para mantener la lista de espera sincronizada
+    // Solo si el modal de ediciÃ³n no estÃ¡ abierto para no interrumpir al usuario
     setInterval(() => {
         const modal = document.getElementById('editPersonaModal');
         const isModalOpen = modal && !modal.classList.contains('hidden');
@@ -550,8 +550,8 @@
         }
     }, 20000); // 20 segundos
 
-    // AUTO-LLAMADO AUTOMÁTICO (Nueva Función Solicitada)
-    // Si no hay atención activa Y hay turnos en espera Y no estamos en pausa
+    // AUTO-LLAMADO AUTOMÃTICO (Nueva FunciÃ³n Solicitada)
+    // Si no hay atenciÃ³n activa Y hay turnos en espera Y no estamos en pausa
     @if(!$atencion && count($turnosEnEspera) > 0 && !$isPause)
         const autoForm = document.getElementById('autoCallForm');
         const autoBtn = document.getElementById('autoCallBtn');

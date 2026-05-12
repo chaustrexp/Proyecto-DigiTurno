@@ -54,7 +54,7 @@ class AsesorController extends Controller
                 'ase_id' => $asesor->ase_id,
                 'ase_tipo_asesor' => $asesor->ase_tipo_asesor,
                 'ase_nombre' => $asesor->persona->pers_nombres,
-                'ase_foto' => $asesor->ase_foto ?? 'images/foto de perfil.jpg',
+                'ase_foto' => $asesor->ase_foto ?? 'images/foto de perfil asesor.png',
                 'ase_email' => $asesor->ase_correo
             ]);
             return redirect()->route('asesor.index')->with('success', 'Bienvenido, ' . $asesor->persona->pers_nombres);
@@ -115,7 +115,7 @@ class AsesorController extends Controller
                 'ase_correo'       => $request->ase_correo,
                 'ase_password'     => bcrypt($request->password),
                 'ase_vigencia'     => now()->addYear()->toDateString(),
-                'ase_foto'         => 'images/foto de perfil.jpg',
+                'ase_foto'         => 'images/foto de perfil asesor.png',
                 'PERSONA_pers_doc' => $persona->pers_doc,
             ]);
 
@@ -171,9 +171,29 @@ class AsesorController extends Controller
         // OT = Orientador Técnico → General + Prioritario
         // OV = Orientador de Víctimas → Victima + Empresario
         $tipoAsesor = $asesor->ase_tipo_asesor ?? 'OT';
-        $turnosEnEspera = $this->turnoRepo->getWaitingForAsesor($tipoAsesor);
+        $turnosEnEspera = $this->turnoRepo->getWaitingForAsesor($asesor);
+        $equipoAsesores = $this->getEquipoAsesores();
 
-        return view('asesor.panel', compact('asesor', 'atencion', 'turnosEnEspera'));
+        return view('asesor.panel', compact('asesor', 'atencion', 'turnosEnEspera', 'equipoAsesores'));
+    }
+
+    private function getEquipoAsesores()
+    {
+        return Asesor::with(['persona', 'atenciones' => function ($q) {
+            $q->whereNull('atnc_hora_fin');
+        }, 'pausas' => function ($q) {
+            $q->whereNull('hora_fin');
+        }])->get()->map(function ($a) {
+            $estado = 'DISPONIBLE';
+            if ($a->pausas->isNotEmpty()) {
+                $estado = 'EN RECESO';
+            } elseif ($a->atenciones->isNotEmpty()) {
+                $estado = 'ATENDIENDO';
+            }
+            $a->estado_display = $estado;
+            $a->modulo_nro = str_pad($a->ase_id, 2, '0', STR_PAD_LEFT);
+            return $a;
+        });
     }
 
     public function actividad(Request $request)
@@ -299,11 +319,11 @@ class AsesorController extends Controller
             $html .= '</tr>';
 
             // ── Fila 4: Cabeceras de columna ──────────────────────────────
-            $headers_col = ['N°', 'Turno', 'Ciudadano', 'Documento', 'Hora Inicio', 'Hora Fin', 'Duración (min)', 'Estado'];
-            // 8 columnas: N°, Turno, Ciudadano, Documento, Hora Inicio, Hora Fin, Duración, Estado
+            $headers_col = ['N°', 'Turno', 'Servicio', 'Categoría', 'Ciudadano', 'Teléfono', 'Registro', 'Inicio', 'Fin', 'T. Espera', 'T. Atención', 'Estado'];
+            // 12 columnas
             $html .= '<tr style="background-color:#1a7a36; color:#ffffff; font-weight:bold; height:40px; text-align:center;">';
             foreach ($headers_col as $h) {
-                $html .= '<th style="border:2px solid #15803d; vertical-align:middle; padding:6px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">' . $h . '</th>';
+                $html .= '<th style="border:2px solid #15803d; vertical-align:middle; padding:6px 10px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">' . $h . '</th>';
             }
             $html .= '</tr>';
             $html .= '</thead><tbody>';
@@ -311,24 +331,36 @@ class AsesorController extends Controller
             // ── Filas de datos ─────────────────────────────────────────────
             $row = 1;
             foreach ($queryExport as $atn) {
-                $persona = $atn->turno->solicitante->persona ?? null;
+                $turnoObj = $atn->turno;
+                $persona = $turnoObj->solicitante->persona ?? null;
                 $nombres = $persona ? ($persona->pers_nombres . ' ' . $persona->pers_apellidos) : 'Indeterminado';
-                $doc = $persona ? $persona->pers_doc : '-';
-                $turno = $atn->turno->tur_numero ?? '-';
+                $tel = $turnoObj->tur_telefono ?? ($persona ? $persona->pers_telefono : '-');
+                $numTurno = $turnoObj->tur_numero ?? '-';
+                $servicio = $turnoObj->tur_servicio ?? 'No Def.';
+                $perfil = strtoupper($turnoObj->tur_perfil ?? $turnoObj->tur_tipo);
 
                 $ini = is_string($atn->atnc_hora_inicio) ? \Carbon\Carbon::parse($atn->atnc_hora_inicio) : $atn->atnc_hora_inicio;
+                $h_reg = $turnoObj->tur_hora_fecha ? (is_string($turnoObj->tur_hora_fecha) ? \Carbon\Carbon::parse($turnoObj->tur_hora_fecha) : $turnoObj->tur_hora_fecha) : null;
+                
                 $finRaw = $atn->atnc_hora_fin;
                 $finCarbon = $finRaw ? (is_string($finRaw) ? \Carbon\Carbon::parse($finRaw) : $finRaw) : null;
 
-                $horaInicio = $ini->format('d/m/Y h:i A');
-                $horaFin = $finCarbon ? $finCarbon->format('d/m/Y h:i A') : '—';
-                $duracion = $finCarbon ? $ini->diffInMinutes($finCarbon) . ' min' : '—';
+                $horaRegistro = $h_reg ? $h_reg->format('h:i A') : '—';
+                $horaInicio = $ini->format('h:i A');
+                $horaFin = $finCarbon ? $finCarbon->format('h:i A') : '—';
+                
+                // Tiempos en segundos
+                $s_espera = $h_reg ? abs($ini->diffInSeconds($h_reg)) : 0;
+                $s_atencion = $finCarbon ? abs($ini->diffInSeconds($finCarbon)) : 0;
+
+                $f_espera = gmdate("H:i:s", $s_espera);
+                $f_atencion = $finCarbon ? gmdate("H:i:s", $s_atencion) : '—';
                 
                 $esAusente = $finCarbon && $atn->turno && $atn->turno->tur_estado === 'Ausente';
                 if ($esAusente) {
                     $estado = 'AUSENTE';
-                    $estadoColor = '#e11d48'; // rose-600
-                    $estadoBg = '#fff1f2'; // rose-50
+                    $estadoColor = '#e11d48'; 
+                    $estadoBg = '#fff1f2'; 
                 } elseif ($finCarbon) {
                     $estado = 'ATENDIDO';
                     $estadoColor = '#166534';
@@ -342,31 +374,34 @@ class AsesorController extends Controller
                 $bgRow = ($row % 2 == 0) ? '#f9fafb' : '#ffffff';
 
                 $html .= '<tr style="height:34px; background-color:' . $bgRow . ';">';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:#6b7280; padding:4px 8px; font-size:11px;">' . $row . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:#39A900; padding:4px 8px; font-size:11px;">' . $turno . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; font-weight:bold; color:#111827; padding:4px 10px; font-size:11px;">' . $nombres . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:11px;">' . $doc . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:11px;">' . $horaInicio . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:11px;">' . $horaFin . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:#374151; padding:4px 8px; font-size:11px;">' . $duracion . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:' . $estadoColor . '; background-color:' . $estadoBg . '; padding:4px 8px; font-size:11px;">' . $estado . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:#6b7280; padding:4px 8px; font-size:10px;">' . $row . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:#39A900; padding:4px 8px; font-size:10px;">' . $numTurno . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; padding:4px 8px; font-size:10px;">' . $servicio . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; padding:4px 8px; font-size:10px; font-weight:bold;">' . $perfil . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; font-weight:bold; color:#111827; padding:4px 10px; font-size:10px;">' . $nombres . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-size:10px;">' . $tel . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:10px;">' . $horaRegistro . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:10px;">' . $horaInicio . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:10px;">' . $horaFin . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; mso-number-format:\'\@\'; padding:4px 8px; font-size:10px;">' . $f_espera . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; mso-number-format:\'\@\'; padding:4px 8px; font-size:10px;">' . $f_atencion . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:' . $estadoColor . '; background-color:' . $estadoBg . '; padding:4px 8px; font-size:10px;">' . $estado . '</td>';
                 $html .= '</tr>';
                 $row++;
             }
 
             // ── Fila de resumen KPIs ──────────────────────────────────────
             $html .= '<tr style="background-color:#f0fdf4; height:36px;">';
-            $html .= '<td colspan="2" style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center; vertical-align:middle;">RESUMEN</td>';
-            $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#15803d; text-align:center;">Total: ' . $queryExport->count() . '</td>';
-            $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center;">—</td>';
-            $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center;">Promedio: ' . $promedioDuracion . ' min</td>';
+            $html .= '<td colspan="3" style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center; vertical-align:middle;">RESUMEN</td>';
+            $html .= '<td colspan="2" style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#15803d; text-align:center;">Total: ' . $queryExport->count() . '</td>';
+            $html .= '<td colspan="3" style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center;">Promedio Atención: ' . gmdate("H:i:s", (int)($promedioDuracion * 60)) . '</td>';
             $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#166534; text-align:center;">Atendidos: ' . $totalAtendidos . '</td>';
-            $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#e11d48; text-align:center;">Ausentes: ' . $totalAusentes . '</td>';
+            $html .= '<td colspan="2" style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#e11d48; text-align:center;">Ausentes: ' . $totalAusentes . '</td>';
             $html .= '<td style="border:2px solid #86efac; font-weight:bold; font-size:11px; color:#1e40af; text-align:center;">En Proceso: ' . $totalEnProceso . '</td>';
             $html .= '</tr>';
 
             // ── Pie de documento ──────────────────────────────────────────
-            $html .= '<tr><td colspan="8" style="background-color:#f9fafb; border:1px solid #e5e7eb; font-size:9px; color:#9ca3af; text-align:center; padding:6px; font-style:italic;">Documento generado automáticamente por el Sistema DigiTurno APE SENA &mdash; ' . now()->format('d/m/Y H:i:s') . '</td></tr>';
+            $html .= '<tr><td colspan="11" style="background-color:#f9fafb; border:1px solid #e5e7eb; font-size:9px; color:#9ca3af; text-align:center; padding:6px; font-style:italic;">Documento generado automáticamente por el Sistema DigiTurno APE SENA &mdash; ' . now()->format('d/m/Y H:i:s') . '</td></tr>';
 
             $html .= '</tbody></table></body></html>';
 
@@ -376,7 +411,8 @@ class AsesorController extends Controller
             ]);
         }
 
-        return view('asesor.actividad', compact('asesor', 'atenciones'));
+        $equipoAsesores = $this->getEquipoAsesores();
+        return view('asesor.actividad', compact('asesor', 'atenciones', 'equipoAsesores'));
     }
 
     public function tramites()
@@ -385,7 +421,8 @@ class AsesorController extends Controller
             return redirect()->route('asesor.login');
         $ase_id = session('ase_id');
         $asesor = Asesor::with('persona')->find($ase_id);
-        return view('asesor.tramites', compact('asesor'));
+        $equipoAsesores = $this->getEquipoAsesores();
+        return view('asesor.tramites', compact('asesor', 'equipoAsesores'));
     }
 
     public function reportes(Request $request)
@@ -457,6 +494,7 @@ class AsesorController extends Controller
             ->orderBy('atnc_hora_inicio', 'desc')
             ->paginate(5);
 
+        $equipoAsesores = $this->getEquipoAsesores();
         return view('asesor.reportes', compact(
             'asesor',
             'distribucionTipos',
@@ -464,7 +502,8 @@ class AsesorController extends Controller
             'topTramites',
             'feedback',
             'turnos',
-            'periodo'
+            'periodo',
+            'equipoAsesores'
         ));
     }
 
@@ -489,7 +528,8 @@ class AsesorController extends Controller
             ];
         }
 
-        return view('asesor.configuracion', compact('asesor'));
+        $equipoAsesores = $this->getEquipoAsesores();
+        return view('asesor.configuracion', compact('asesor', 'equipoAsesores'));
     }
 
     public function llamar(Request $request)

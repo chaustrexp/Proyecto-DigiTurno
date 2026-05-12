@@ -11,7 +11,7 @@ class Asesor extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'ase_nrocontrato', 'ase_tipo_asesor', 'ase_vigencia', 'ase_password', 'ase_correo', 'PERSONA_pers_doc', 'ase_foto'
+        'ase_nrocontrato', 'ase_tipo_asesor', 'ase_capacitado_victimas', 'ase_genero', 'ase_vigencia', 'ase_password', 'ase_correo', 'PERSONA_pers_doc', 'ase_foto'
     ];
 
     public function persona()
@@ -22,5 +22,10 @@ class Asesor extends Model
     public function atenciones()
     {
         return $this->hasMany(Atencion::class, 'ASESOR_ase_id', 'ase_id');
+    }
+
+    public function pausas()
+    {
+        return $this->hasMany(PausaAsesor::class, 'ASESOR_ase_id', 'ase_id');
     }
 }

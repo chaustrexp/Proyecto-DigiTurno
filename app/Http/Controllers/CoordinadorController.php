@@ -196,7 +196,7 @@ class CoordinadorController extends Controller
                 'estado' => $estado,
                 'atencion' => $atencionActiva,
                 'inicio_sesion' => $atencionActiva ? $atencionActiva->atnc_hora_inicio->format('H:i') : '--:--',
-                'ase_foto' => $ase->ase_foto ?? 'images/foto de perfil.jpg'
+                'ase_foto' => $ase->ase_foto ?? 'images/foto de perfil asesor.png'
             ];
         });
 
@@ -276,16 +276,27 @@ class CoordinadorController extends Controller
         
         // Fila de Cabeceras
         $html .= '<tr style="background-color:#f4f6f8; color:#1a202c; font-weight:bold; height:45px; text-align:center;">';
-        $columns = ['ID', 'Turno', 'Estado', 'Categoría', 'Fecha y Hora', 'Doc. Usuario', 'Solicitante', 'Asesor Asignado', 'Tiempo Espera (Min)'];
+        $columns = [
+            'ID', 'Turno', 'Estado', 'Categoría', 'Servicio', 'Tipo Atención', 
+            'Registro', 'Inicio Atención', 'Fin Atención', 
+            'T. Espera (HH:MM:SS)', 'T. Atención (HH:MM:SS)', 
+            'Documento', 'Ciudadano', 'Teléfono', 
+            'Asesor', 'Módulo'
+        ];
         foreach($columns as $col) {
-            $html .= '<th style="border: 2px solid #e2e8f0; vertical-align:middle;">' . $col . '</th>';
+            $html .= '<th style="border: 2px solid #e2e8f0; vertical-align:middle; padding:10px; background-color:#f4f6f8;">' . $col . '</th>';
         }
         $html .= '</tr></thead><tbody>';
 
         foreach ($turnos as $t) {
-            $solicitante = $t->solicitante && $t->solicitante->persona ? $t->solicitante->persona->pers_nombres . ' ' . $t->solicitante->persona->pers_apellidos : 'No Registrado';
-            $doc = $t->solicitante && $t->solicitante->persona ? $t->solicitante->persona->pers_doc : '-';
-            $asesor = $t->atencion && $t->atencion->asesor && $t->atencion->asesor->persona ? explode(' ', $t->atencion->asesor->persona->pers_nombres)[0] : 'En Cola';
+            $persona = $t->solicitante && $t->solicitante->persona ? $t->solicitante->persona : null;
+            $solicitante = $persona ? $persona->pers_nombres . ' ' . $persona->pers_apellidos : 'No Registrado';
+            $doc = $persona ? $persona->pers_doc : '-';
+            $tel = $t->tur_telefono ?? ($persona ? $persona->pers_telefono : '-');
+            
+            $asesorObj = $t->atencion && $t->atencion->asesor ? $t->atencion->asesor : null;
+            $asesorNom = $asesorObj && $asesorObj->persona ? explode(' ', $asesorObj->persona->pers_nombres)[0] . ' ' . explode(' ', $asesorObj->persona->pers_apellidos)[0] : 'En Cola';
+            $modulo = $asesorObj ? $asesorObj->ase_id : '-';
             
             $estado = $t->tur_estado;
             $estadoColor = match($estado) {
@@ -298,23 +309,39 @@ class CoordinadorController extends Controller
             
             $tipoColor = $t->tur_tipo == 'General' ? '#10b981' : (in_array($t->tur_tipo, ['Prioritario', 'Prioritaria']) ? '#f59e0b' : '#3b82f6');
             
-            $espera = 0;
-            if ($t->atencion) {
-                $espera = $t->atencion->atnc_hora_inicio->diffInMinutes($t->tur_hora_fecha);
-            } else {
-                $espera = now()->diffInMinutes($t->tur_hora_fecha);
-            }
+            // Tiempos
+            $h_registro = $t->tur_hora_fecha;
+            $h_inicio = $t->atencion ? $t->atencion->atnc_hora_inicio : null;
+            $h_fin = $t->atencion ? $t->atencion->atnc_hora_fin : null;
+            
+            // Cálculos en segundos para gmdate
+            $s_espera = $h_registro ? ($h_inicio ? $h_inicio->diffInSeconds($h_registro) : now()->diffInSeconds($h_registro)) : 0;
+            $s_atencion = ($h_inicio && $h_fin) ? $h_inicio->diffInSeconds($h_fin) : 0;
+
+            // Formateo HH:MM:SS
+            $f_espera = gmdate("H:i:s", abs($s_espera));
+            $f_atencion = gmdate("H:i:s", abs($s_atencion));
 
             $html .= '<tr style="height:35px;">';
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $t->tur_id . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; color:#39A900; background-color:#f8fafc;">#' . $t->tur_numero . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; color:' . $estadoColor . ';">' . $estado . '</td>';
-            $html .= '<td style="border: 1px solid #e2e8f0; color:' . $tipoColor . '; font-weight:bold;">' . strtoupper($t->tur_tipo) . '</td>';
-            $html .= '<td style="border: 1px solid #e2e8f0; color:#64748b;">' . \Carbon\Carbon::parse($t->tur_hora_fecha)->format('d/m/Y h:i A') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; color:' . $tipoColor . '; font-weight:bold;">' . strtoupper($t->tur_perfil ?? $t->tur_tipo) . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . ($t->tur_servicio ?? 'No Def.') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . ($t->tur_tipo_atencion ?? 'Normal') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; color:#64748b;">' . ($h_registro ? $h_registro->format('d/m/Y h:i A') : '-') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . ($h_inicio ? $h_inicio->format('h:i A') : '-') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . ($h_fin ? $h_fin->format('h:i A') : '-') . '</td>';
+            
+            // Celdas de tiempo con formato forzado de texto para Excel
+            $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; mso-number-format:\'\@\'; color:' . ($s_espera > 900 && !$h_inicio ? '#ef4444' : '#64748b') . ';">' . $f_espera . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; mso-number-format:\'\@\';">' . $f_atencion . '</td>';
+            
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $doc . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold;">' . $solicitante . '</td>';
-            $html .= '<td style="border: 1px solid #e2e8f0;">' . $asesor . '</td>';
-            $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; color:' . ($espera > 15 && !$t->atencion ? '#ef4444' : '#64748b') . ';">' . $espera . ' min</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . $tel . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0;">' . $asesorNom . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; background-color:#f1f5f9;">' . $modulo . '</td>';
             $html .= '</tr>';
         }
 
@@ -451,8 +478,10 @@ class CoordinadorController extends Controller
                 'ase_password'     => \Illuminate\Support\Facades\Hash::make($request->ase_password),
                 'ase_nrocontrato'  => $request->ase_nrocontrato ?? 'CONT-' . now()->format('Ymd'),
                 'ase_tipo_asesor'  => $request->ase_tipo_asesor,
+                'ase_capacitado_victimas' => $request->has('ase_capacitado_victimas'),
+                'ase_genero'       => $request->ase_genero,
                 'ase_vigencia'     => now()->addYear()->toDateString(),
-                'ase_foto'         => 'images/foto de perfil.jpg',
+                'ase_foto'         => $request->ase_foto ?? ($request->ase_genero == 'F' ? 'images/foto de perfil asesora.png' : 'images/foto de perfil asesor.png'),
             ]);
 
             \DB::commit();
@@ -475,6 +504,8 @@ class CoordinadorController extends Controller
         if ($request->filled('ase_password')) {
             $asesor->ase_password = bcrypt($request->ase_password);
         }
+        $asesor->ase_capacitado_victimas = $request->has('ase_capacitado_victimas');
+        $asesor->ase_genero = $request->ase_genero ?? $asesor->ase_genero;
         $asesor->save();
 
         if ($asesor->persona) {
@@ -596,7 +627,7 @@ class CoordinadorController extends Controller
                     'atencionActiva' => null,
                     'pausaActiva'  => null,
                     'atencionesDia' => 0,
-                    'foto'         => 'images/foto de perfil.jpg',
+                    'foto'         => 'images/foto de perfil asesor.png',
                 ];
                 continue;
             }
@@ -624,7 +655,7 @@ class CoordinadorController extends Controller
                 'atencionActiva' => $atencionActiva,
                 'pausaActiva'    => $pausaActiva,
                 'atencionesDia'  => $atencionesDia,
-                'foto'           => $asesor->ase_foto ?? 'images/foto de perfil.jpg',
+                'foto'           => $asesor->ase_foto ?? 'images/foto de perfil asesor.png',
             ];
         }
 

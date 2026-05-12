@@ -140,7 +140,7 @@
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100 group-hover:border-sena-100">
-                                <img src="{{ asset($ase['ase_foto'] ?? 'images/foto de perfil.jpg') }}" class="w-full h-full object-cover">
+                                <img src="{{ asset($ase['ase_foto'] ?? 'images/foto de perfil asesor.png') }}" class="w-full h-full object-cover">
                             </div>
                             <div>
                                 <h4 class="text-xs font-black text-gray-900 leading-none">{{ explode(' ', $ase['nombre'])[0] }}</h4>
@@ -413,7 +413,6 @@
     // --- LÓGICA DE MONITOREO AUTOMÁTICO (POLLING) ---
     async function updateDashboardStats() {
         try {
-            console.log('Actualizando estadísticas del dashboard...');
             const response = await fetch("{{ route('coordinador.api.stats') }}");
             const result = await response.json();
 
@@ -426,7 +425,7 @@
                 // 2. Actualizar Gráfico de Flujo por Hora
                 if (result.flowValues) {
                     flowChart.data.datasets[0].data = result.flowValues;
-                    flowChart.update('none'); // Update without animation for smoother polling
+                    flowChart.update('none'); 
                 }
 
                 // 3. Actualizar Gráfico de Documentos
@@ -446,7 +445,6 @@
                         const pinPing = document.getElementById(`pin-ping-${mod.modulo}`);
 
                         if (pinOuter && pinInner && pinPing) {
-                            // Reset classes
                             pinOuter.className = 'w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition relative';
                             pinInner.className = 'w-3 h-3 rounded-full';
                             pinPing.className = 'absolute inset-0 rounded-full animate-ping opacity-20';
@@ -469,11 +467,9 @@
                         }
                     });
                 }
-                
-                console.log(`Última actualización: ${result.timestamp}`);
             }
         } catch (error) {
-            console.error('Error al sincronizar estadísticas:', error);
+            // Error silenciado para la presentación
         }
     }
 

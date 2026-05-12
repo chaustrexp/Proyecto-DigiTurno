@@ -75,7 +75,7 @@
                 <div class="relative">
                     <button onclick="document.getElementById('coord-user-menu').classList.toggle('hidden')" 
                             class="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-sena-blue/30 transition overflow-hidden focus:outline-none">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode(session('coordinador_nombre', 'C')) }}&background=f0f0ff&color=10069F&bold=true" class="w-full h-full object-cover" alt="Profile">
+                        <img src="{{ asset('images/foto de perfil coordinador.png') }}" class="w-full h-full object-cover" alt="Profile">
                     </button>
                     <div id="coord-user-menu" class="hidden absolute right-0 top-10 bg-white border border-gray-100 rounded-2xl shadow-2xl w-48 z-50 overflow-hidden py-1.5">
                         <div class="px-3 py-2 border-b border-gray-50">
@@ -170,11 +170,10 @@
     <script>
         function updateHeaderClock() {
             const now = new Date();
-            const options = { month: 'short', day: 'numeric', year: 'numeric' };
-            const dateStr = now.toLocaleDateString('es-CO', options);
-            const timeStr = now.toLocaleTimeString('es-CO', { hour12: false });
+            const dateStr = now.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', month: 'short', day: 'numeric', year: 'numeric' });
+            const timeStr = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
             const clockEl = document.getElementById('header-datetime');
-            if (clockEl) clockEl.textContent = dateStr + ' | ' + timeStr;
+            if (clockEl) clockEl.textContent = dateStr + ' | ' + timeStr.toUpperCase();
         }
         setInterval(updateHeaderClock, 1000);
         updateHeaderClock();

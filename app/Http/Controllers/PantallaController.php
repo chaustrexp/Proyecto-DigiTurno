@@ -23,7 +23,7 @@ class PantallaController extends Controller
             'tur_numero' => $atencionActual->turno->tur_numero,
             'ciudadano' => $nombreCompleto,
             'modulo' => $atencionActual->ASESOR_ase_id,
-            'ase_foto' => $atencionActual->asesor->ase_foto ?? 'images/foto de perfil.jpg'
+            'ase_foto' => $atencionActual->asesor->ase_foto ?? 'images/foto de perfil asesor.png'
         ] : null;
 
         // Turnos en espera con asesor disponible sugerido por perfil
@@ -93,7 +93,7 @@ class PantallaController extends Controller
             'tur_numero' => $atencionActual->turno->tur_numero,
             'ciudadano' => $nombreCompleto,
             'modulo' => $atencionActual->ASESOR_ase_id,
-            'ase_foto' => $atencionActual->asesor->ase_foto ? asset($atencionActual->asesor->ase_foto) : asset('images/foto de perfil.jpg'),
+            'ase_foto' => $atencionActual->asesor->ase_foto ? asset($atencionActual->asesor->ase_foto) : asset('images/foto de perfil asesor.png'),
             'atnc_id' => $atencionActual->atnc_id
         ] : null;
 

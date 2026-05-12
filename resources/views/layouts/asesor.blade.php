@@ -41,6 +41,10 @@
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
         .sidebar-item { transition: all 0.3s ease; }
         .active-glow { box-shadow: 0 0 15px rgba(16, 6, 159, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
     </style>
     @yield('styles')
 </head>
@@ -101,7 +105,7 @@
             <div class="flex flex-col bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <div class="flex items-center justify-between mb-2 px-1">
                     <div class="flex items-center space-x-2">
-                        <img src="{{ asset(session('ase_foto', $asesor->ase_foto ?? 'images/foto de perfil.jpg')) }}" class="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover" alt="Profile">
+                        <img src="{{ asset(session('ase_foto', $asesor->ase_foto ?? 'images/foto de perfil asesor.png')) }}" class="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover" alt="Profile">
                         <div>
                             <p class="text-[10px] font-black text-gray-900 leading-tight">{{ session('ase_nombre', 'Asesor') }}</p>
                             <p class="text-[8px] font-bold text-sena-500 uppercase tracking-widest">{{ session('ase_tipo_asesor', 'General') }}</p>
@@ -123,6 +127,36 @@
                 <a href="{{ route('manual.asesor') }}" class="inline-block mt-1 text-[10px] font-bold text-sena-500 hover:underline">Manual de usuario</a>
             </div>
         </div>
+
+        @if(isset($equipoAsesores))
+        <!-- Equipo de Asesores List -->
+        <div class="px-4 pb-6 mt-2">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h3 class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Equipo de Asesores</h3>
+                <span class="text-[8px] font-black text-sena-500 bg-sena-50 px-1.5 py-0.5 rounded-md">{{ $equipoAsesores->count() }}</span>
+            </div>
+            <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                @foreach($equipoAsesores as $miembro)
+                <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-gray-50 hover:border-gray-100 transition-all group">
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <img src="{{ asset($miembro->ase_foto) }}" class="w-7 h-7 rounded-full object-cover {{ $miembro->estado_display === 'ATENDIENDO' ? '' : 'grayscale' }} group-hover:grayscale-0 transition-all" alt="Asesor">
+                            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white 
+                                {{ $miembro->estado_display === 'ATENDIENDO' ? 'bg-emerald-500' : ($miembro->estado_display === 'EN RECESO' ? 'bg-amber-500' : 'bg-gray-300') }}"></span>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-gray-800 leading-tight">{{ $miembro->persona->pers_nombres }} {{ Str::limit($miembro->persona->pers_apellidos, 1, '.') }}</p>
+                            <p class="text-[7px] font-bold text-gray-400 uppercase tracking-widest">Módulo {{ $miembro->modulo_nro }}</p>
+                        </div>
+                    </div>
+                    @if($miembro->estado_display === 'ATENDIENDO')
+                        <i class="fa-solid fa-headset text-[8px] text-emerald-500 animate-pulse"></i>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </aside>
 
     <!-- Main Section -->
@@ -133,10 +167,60 @@
             <div class="flex items-center space-x-2">
                 <span class="text-gray-400 font-medium text-xs">Agencia Pública de Empleo</span>
                 <span class="text-gray-200">|</span>
-                <span class="text-gray-400 font-medium text-xs">SENA Regional</span>
+                <span class="text-gray-400 font-medium text-[10px] bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 flex items-center gap-2">
+                    <i class="fa-regular fa-clock text-sena-500"></i>
+                    <span id="header-clock" class="font-black text-gray-700">00:00:00 AM</span>
+                </span>
             </div>
 
-            <div class="flex items-center space-x-5">
+            <div class="flex items-center space-x-6">
+                @if(isset($equipoAsesores))
+                <div class="flex items-center space-x-3 pr-4 border-r border-gray-100">
+                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Equipo Activo</span>
+                    <div class="flex -space-x-2">
+                        @foreach($equipoAsesores->where('estado_display', 'ATENDIENDO')->take(5) as $miembro)
+                            <div class="relative group">
+                                <img src="{{ asset($miembro->ase_foto) }}" 
+                                     class="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover hover:scale-110 transition-transform cursor-pointer" 
+                                     alt="Asesor">
+                                
+                                <!-- Mini Modal / Tooltip -->
+                                <div class="absolute top-10 left-1/2 -translate-x-1/2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-50 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <div class="relative">
+                                            <img src="{{ asset($miembro->ase_foto) }}" class="w-10 h-10 rounded-xl object-cover" alt="">
+                                            <span class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <p class="text-[10px] font-black text-gray-900 truncate leading-tight">{{ $miembro->persona->pers_nombres }}</p>
+                                            <p class="text-[8px] font-bold text-sena-500 uppercase tracking-widest">Módulo {{ $miembro->modulo_nro }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <div class="flex items-center justify-between pt-2 border-t border-gray-50">
+                                            <span class="text-[7px] font-black text-gray-400 uppercase tracking-wider">Estado</span>
+                                            <span class="text-[7px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md uppercase">En Llamado</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[7px] font-black text-gray-400 uppercase tracking-wider">Correo</span>
+                                            <span class="text-[7px] font-bold text-gray-600 truncate max-w-[80px]">{{ $miembro->ase_correo }}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Decorative arrow -->
+                                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45 border-t border-l border-gray-100"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                        @if($equipoAsesores->where('estado_display', 'ATENDIENDO')->count() > 5)
+                            <div class="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400 z-10">
+                                +{{ $equipoAsesores->where('estado_display', 'ATENDIENDO')->count() - 5 }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                <div class="flex items-center space-x-5">
                 <div class="flex items-center space-x-1.5 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">En Línea</span>
@@ -216,6 +300,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // RELOJ EN TIEMPO REAL
+            function updateClock() {
+                const now = new Date();
+                const clock = document.getElementById('header-clock');
+                if (clock) {
+                    const horaStr = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
+                    clock.textContent = horaStr.toUpperCase();
+                }
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
             const bell = document.getElementById('notification-bell');
             const dropdown = document.getElementById('notification-dropdown');
             const indicator = document.getElementById('notification-indicator');

@@ -64,7 +64,7 @@ class ApiController extends Controller
                 'asesor_nombre'=> $nombreAsesor,
                 'ase_foto'     => $asesor?->ase_foto
                     ? asset($asesor->ase_foto)
-                    : asset('images/foto de perfil.jpg'),
+                    : asset('images/foto de perfil asesor.png'),
                 'atnc_id'      => $atencionActual->atnc_id,
                 'ciudadano'    => $atencionActual->turno->solicitante?->persona?->pers_nombres ?? 'Ciudadano',
             ];
@@ -154,6 +154,35 @@ class ApiController extends Controller
                 'hora'      => $turno->tur_hora_fecha->format('d/m/Y h:i A'),
                 'ciudadano' => ($turno->solicitante?->persona?->pers_nombres ?? 'Usuario') . ' ' . ($turno->solicitante?->persona?->pers_apellidos ?? 'Kiosco')
             ]
+        ]);
+    }
+
+    /**
+     * Vista de seguimiento para dispositivos móviles (QR).
+     */
+    public function seguimientoTurno($documento)
+    {
+        $turno = Turno::whereHas('solicitante.persona', function($query) use ($documento) {
+            $query->where('pers_doc', $documento);
+        })
+        ->whereDate('tur_hora_fecha', now()->toDateString())
+        ->latest('tur_id')
+        ->first();
+
+        if (!$turno) {
+            return "<html><body style='font-family:sans-serif; text-align:center; padding: 50px;'><h1 style='color:#e11d48;'>Turno no encontrado</h1><p>No se encontraron turnos activos para hoy.</p></body></html>";
+        }
+
+        // Calculamos cuántos hay por delante
+        $espera = Turno::where('tur_estado', 'Espera')
+            ->whereDate('tur_hora_fecha', now()->toDateString())
+            ->where('tur_id', '<', $turno->tur_id)
+            ->count();
+
+        return view('seguimiento', [
+            'turno' => $turno,
+            'espera' => $espera,
+            'ciudadano' => ($turno->solicitante?->persona?->pers_nombres ?? 'Usuario')
         ]);
     }
 }

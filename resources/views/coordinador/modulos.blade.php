@@ -56,7 +56,7 @@
         {{-- Header --}}
         <div class="flex items-start justify-between mb-5">
             <div class="flex items-center space-x-3">
-                <img src="{{ asset($ase->ase_foto ?? 'images/foto de perfil.jpg') }}" 
+                <img src="{{ asset($ase->ase_foto ?? 'images/foto de perfil asesor.png') }}" 
                      class="w-12 h-12 rounded-2xl border-2 border-sena-100 object-cover group-hover:border-sena-300 transition">
                 <div>
                     <h3 class="text-sm font-black text-gray-900 leading-snug">{{ $ase->persona->pers_nombres ?? 'N/A' }} {{ $ase->persona->pers_apellidos ?? '' }}</h3>
@@ -272,6 +272,26 @@
                         </div>
                     </div>
 
+                    <div class="col-span-full space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Género del Asesor *</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="ase_genero" value="M" class="peer sr-only" required onchange="updateDefaultPhoto('M', 'modal-create')">
+                                <div class="flex items-center justify-center gap-3 p-3 rounded-2xl border-2 border-gray-100 peer-checked:border-sena-blue peer-checked:bg-blue-50 transition-all">
+                                    <i class="fa-solid fa-mars text-sena-blue"></i>
+                                    <span class="text-xs font-black text-gray-800">Hombre</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="ase_genero" value="F" class="peer sr-only" onchange="updateDefaultPhoto('F', 'modal-create')">
+                                <div class="flex items-center justify-center gap-3 p-3 rounded-2xl border-2 border-gray-100 peer-checked:border-rose-500 peer-checked:bg-rose-50 transition-all">
+                                    <i class="fa-solid fa-venus text-rose-500"></i>
+                                    <span class="text-xs font-black text-gray-800">Mujer</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">N° de Contrato / Ficha</label>
                         <div class="relative group">
@@ -279,6 +299,20 @@
                                 <i class="fa-solid fa-file-contract text-xs"></i>
                             </div>
                             <input type="text" name="ase_nrocontrato" value="{{ old('ase_nrocontrato') }}" placeholder="CONT-2026..." class="w-full bg-gray-50/50 border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold text-gray-700 focus:outline-none focus:ring-4 focus:ring-sena-500/10 focus:border-sena-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="col-span-full space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Capacitación Especial</label>
+                        <div class="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/30">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="ase_capacitado_victimas" value="1" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                            </label>
+                            <div>
+                                <p class="text-xs font-black text-gray-800">Capacitado para atender Víctimas</p>
+                                <p class="text-[9px] text-gray-400 font-medium">Permite al asesor atender la cola de víctimas con prioridad.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -317,7 +351,7 @@
             <div>
                 <h2 class="text-lg font-black text-white">Editar Asesor</h2>
                 <div class="flex items-center space-x-3 mt-1">
-                    <img id="edit-preview-photo" src="{{ asset('images/foto de perfil.jpg') }}" class="w-8 h-8 rounded-lg border border-white/30 object-cover">
+                    <img id="edit-preview-photo" src="{{ asset('images/foto de perfil asesor.png') }}" class="w-8 h-8 rounded-lg border border-white/30 object-cover">
                     <p class="text-sena-100 text-xs font-medium" id="edit-modal-subtitle">Modifica los datos del asesor</p>
                 </div>
             </div>
@@ -331,7 +365,7 @@
             <!-- Profile Photo Section -->
             <div class="flex flex-col md:flex-row items-center gap-8 bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner">
                 <div class="relative group">
-                    <img id="edit-preview-photo-large" src="{{ asset('images/foto de perfil.jpg') }}" class="w-28 h-28 rounded-[2rem] border-4 border-white shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500">
+                    <img id="edit-preview-photo-large" src="{{ asset('images/foto de perfil asesor.png') }}" class="w-28 h-28 rounded-[2rem] border-4 border-white shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500">
                     <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-sena-500 text-white rounded-xl flex items-center justify-center shadow-lg border-2 border-white">
                         <i class="fa-solid fa-camera text-[10px]"></i>
                     </div>
@@ -343,10 +377,30 @@
                             <i class="fa-solid fa-link text-xs"></i>
                         </div>
                         <input type="text" name="ase_foto" id="edit-ase_foto" 
-                               oninput="document.getElementById('edit-preview-photo-large').src = this.value.startsWith('http') ? this.value : '/' + this.value; document.getElementById('edit-preview-photo').src = this.value.startsWith('http') ? this.value : '/' + this.value" 
+                               oninput="document.getElementById('edit-preview-photo-large').src = '/' + this.value; document.getElementById('edit-preview-photo').src = '/' + this.value" 
                                class="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold text-gray-700 focus:outline-none focus:ring-4 focus:ring-sena-500/10 focus:border-sena-500 transition-all shadow-sm"
                                placeholder="images/foto de perfil.jpg">
                     </div>
+                </div>
+            </div>
+
+            <div class="col-span-full space-y-2 px-8">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Género del Asesor *</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="ase_genero" id="edit-ase_genero-M" value="M" class="peer sr-only" required onchange="updateDefaultPhoto('M', 'modal-edit')">
+                        <div class="flex items-center justify-center gap-3 p-3 rounded-2xl border-2 border-gray-100 peer-checked:border-sena-blue peer-checked:bg-blue-50 transition-all">
+                            <i class="fa-solid fa-mars text-sena-blue"></i>
+                            <span class="text-xs font-black text-gray-800">Hombre</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="ase_genero" id="edit-ase_genero-F" value="F" class="peer sr-only" onchange="updateDefaultPhoto('F', 'modal-edit')">
+                        <div class="flex items-center justify-center gap-3 p-3 rounded-2xl border-2 border-gray-100 peer-checked:border-rose-500 peer-checked:bg-rose-50 transition-all">
+                            <i class="fa-solid fa-venus text-rose-500"></i>
+                            <span class="text-xs font-black text-gray-800">Mujer</span>
+                        </div>
+                    </label>
                 </div>
             </div>
 
@@ -425,6 +479,20 @@
                     </div>
                     <p class="text-[9px] text-gray-400 font-bold ml-1">Dejar en blanco para conservar la actual</p>
                 </div>
+
+                <div class="col-span-full space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Capacitación Especial</label>
+                    <div class="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/30">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="ase_capacitado_victimas" id="edit-ase_capacitado_victimas" value="1" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                        </label>
+                        <div>
+                            <p class="text-xs font-black text-gray-800">Capacitado para atender Víctimas</p>
+                            <p class="text-[9px] text-gray-400 font-medium">Permite al asesor atender la cola de víctimas con prioridad.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex space-x-4 pt-6">
@@ -472,6 +540,17 @@
         document.body.style.overflow = 'hidden';
     }
 
+    function updateDefaultPhoto(genero, modalId) {
+        const photoPath = genero === 'M' ? 'images/foto de perfil asesor.png' : 'images/foto de perfil asesora.png';
+        if (modalId === 'modal-create') {
+            document.querySelector('#modal-create [name="ase_foto"]').value = photoPath;
+        } else {
+            document.getElementById('edit-ase_foto').value = photoPath;
+            document.getElementById('edit-preview-photo').src = '/' + photoPath;
+            document.getElementById('edit-preview-photo-large').src = '/' + photoPath;
+        }
+    }
+
     function closeModal(id) {
         const modal = document.getElementById(id);
         modal.classList.add('hidden');
@@ -485,8 +564,15 @@
         document.getElementById('edit-pers_telefono').value = persona?.pers_telefono ?? '';
         document.getElementById('edit-ase_correo').value = asesor.ase_correo ?? '';
         document.getElementById('edit-ase_nrocontrato').value = asesor.ase_nrocontrato ?? '';
-        document.getElementById('edit-ase_foto').value = asesor.ase_foto ?? 'images/foto de perfil.jpg';
-        const photoPath = asesor.ase_foto ?? 'images/foto de perfil.jpg';
+        document.getElementById('edit-ase_foto').value = asesor.ase_foto ?? 'images/foto de perfil asesor.png';
+        document.getElementById('edit-ase_capacitado_victimas').checked = !!asesor.ase_capacitado_victimas;
+        
+        if (asesor.ase_genero === 'F') {
+            document.getElementById('edit-ase_genero-F').checked = true;
+        } else {
+            document.getElementById('edit-ase_genero-M').checked = true;
+        }
+        const photoPath = asesor.ase_foto ?? 'images/foto de perfil asesor.png';
         document.getElementById('edit-preview-photo').src = `/${photoPath}`;
         document.getElementById('edit-preview-photo-large').src = `/${photoPath}`;
         document.getElementById('edit-modal-subtitle').textContent = 'Editando: ' + (persona?.pers_nombres ?? 'Asesor') + ' ' + (persona?.pers_apellidos ?? '');

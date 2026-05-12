@@ -42,19 +42,31 @@
             <thead>
                 <tr class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50">
                     <th class="px-10 py-6">Turno / ID</th>
+                    <th class="px-10 py-6">Servicio / Perfil</th>
                     <th class="px-10 py-6">Información del Ciudadano</th>
                     <th class="px-10 py-6">Intervalo de Atención</th>
-                    <th class="px-10 py-6">Duración Estimada</th>
-                    <th class="px-10 py-6 text-center">Estado del Proceso</th>
+                    <th class="px-10 py-6">Duración</th>
+                    <th class="px-10 py-6 text-center">Estado</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @foreach($atenciones as $atn)
+                @php
+                    $h_ini = is_string($atn->atnc_hora_inicio) ? \Carbon\Carbon::parse($atn->atnc_hora_inicio) : $atn->atnc_hora_inicio;
+                    $h_fin = $atn->atnc_hora_fin ? (is_string($atn->atnc_hora_fin) ? \Carbon\Carbon::parse($atn->atnc_hora_fin) : $atn->atnc_hora_fin) : null;
+                    $duracionMin = $h_fin ? $h_ini->diffInMinutes($h_fin) : 0;
+                @endphp
                 <tr class="hover:bg-gray-50/50 transition-colors group cursor-default">
                     <td class="px-10 py-8">
                         <div class="flex flex-col">
                             <span class="text-sm font-black text-gray-900 group-hover:text-sena-500 transition-colors">{{ $atn->turno->tur_numero }}</span>
                             <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Ticket #{{ str_pad($atn->atnc_id ?? rand(100, 999), 5, '0', STR_PAD_LEFT) }}</span>
+                        </div>
+                    </td>
+                    <td class="px-10 py-8">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-black text-gray-700 leading-tight">{{ $atn->turno->tur_servicio ?? 'No Definido' }}</span>
+                            <span class="text-[9px] font-bold text-sena-600 uppercase tracking-widest mt-1">{{ $atn->turno->tur_perfil ?? $atn->turno->tur_tipo }}</span>
                         </div>
                     </td>
                     <td class="px-10 py-8">
@@ -72,46 +84,50 @@
                         <div class="flex flex-col space-y-1">
                             <div class="flex items-center space-x-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                <span class="text-xs font-bold text-gray-600 italic">Entrada: {{ is_string($atn->atnc_hora_inicio) ? date('h:i A', strtotime($atn->atnc_hora_inicio)) : $atn->atnc_hora_inicio->format('h:i A') }}</span>
+                                <span class="text-xs font-bold text-gray-600 italic">Entrada: {{ $h_ini->format('h:i A') }}</span>
                             </div>
-                            @if($atn->atnc_hora_fin)
+                            @if($h_fin)
                             <div class="flex items-center space-x-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-                                <span class="text-xs font-bold text-gray-600 italic">Salida: {{ is_string($atn->atnc_hora_fin) ? date('h:i A', strtotime($atn->atnc_hora_fin)) : $atn->atnc_hora_fin->format('h:i A') }}</span>
+                                <span class="text-xs font-bold text-gray-600 italic">Salida: {{ $h_fin->format('h:i A') }}</span>
                             </div>
                             @else
                             <div class="flex items-center space-x-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                                <span class="text-xs font-black text-blue-500 uppercase tracking-tighter">Atención Activa</span>
+                                <span class="text-xs font-black text-blue-500 uppercase tracking-tighter">Activa</span>
                             </div>
                             @endif
                         </div>
                     </td>
                     <td class="px-10 py-8">
+                        @if($h_fin)
                         <div class="flex flex-col">
-                            <span class="text-xs font-black text-gray-800">12 min 45s</span>
+                            <span class="text-xs font-black text-gray-800">{{ $duracionMin }} min</span>
                             <div class="w-20 bg-gray-100 h-1 rounded-full mt-2 overflow-hidden">
-                                <div class="bg-sena-500 h-full rounded-full" style="width: 70%"></div>
+                                <div class="bg-sena-500 h-full rounded-full" style="width: {{ min(100, ($duracionMin / 20) * 100) }}%"></div>
                             </div>
                         </div>
+                        @else
+                        <span class="text-xs font-bold text-gray-400 italic">Cronometrando...</span>
+                        @endif
                     </td>
                     <td class="px-10 py-8 text-center">
-                        @if($atn->atnc_hora_fin)
+                        @if($h_fin)
                             @if($atn->turno && $atn->turno->tur_estado === 'Ausente')
-                                <div class="inline-flex items-center space-x-2 bg-rose-50 text-rose-600 text-[10px] font-black px-5 py-2 rounded-xl border border-rose-100 uppercase tracking-widest">
+                                <div class="inline-flex items-center space-x-2 bg-rose-50 text-rose-600 text-[9px] font-black px-4 py-2 rounded-xl border border-rose-100 uppercase tracking-widest">
                                     <i class="fa-solid fa-user-xmark"></i>
                                     <span>Ausente</span>
                                 </div>
                             @else
-                                <div class="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-600 text-[10px] font-black px-5 py-2 rounded-xl border border-emerald-100 uppercase tracking-widest">
+                                <div class="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-600 text-[9px] font-black px-4 py-2 rounded-xl border border-emerald-100 uppercase tracking-widest">
                                     <i class="fa-solid fa-check-double"></i>
-                                    <span>Atendido</span>
+                                    <span>Finalizado</span>
                                 </div>
                             @endif
                         @else
-                            <div class="inline-flex items-center space-x-2 bg-blue-50 text-blue-600 text-[10px] font-black px-5 py-2 rounded-xl border border-blue-100 uppercase tracking-widest animate-pulse">
+                            <div class="inline-flex items-center space-x-2 bg-blue-50 text-blue-600 text-[9px] font-black px-4 py-2 rounded-xl border border-blue-100 uppercase tracking-widest animate-pulse">
                                 <i class="fa-solid fa-spinner fa-spin"></i>
-                                <span>En Proceso</span>
+                                <span>Atendiendo</span>
                             </div>
                         @endif
                     </td>

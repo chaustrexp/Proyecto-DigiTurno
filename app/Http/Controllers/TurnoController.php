@@ -28,6 +28,7 @@ class TurnoController extends Controller
             'tur_tipo_atencion'=> 'required|in:Normal,Especial',
             'tur_servicio'     => 'required|in:Orientacion,Formacion,Emprendimiento',
             'tur_telefono'     => 'nullable|string|max:20',
+            'receive_method'   => 'required|in:SMS,WhatsApp,Email,QR,Fisico',
         ]);
 
         // ── Validación de longitud por tipo de documento (Normativa Colombiana) ──

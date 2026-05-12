@@ -199,7 +199,7 @@
                             </div>
                             {{-- Col 3-5: Módulo / Profesional --}}
                             <div class="col-span-3 flex items-center gap-3 pl-3 border-l border-emerald-200">
-                                <img src="{{ asset($turnoActual->ase_foto ?? 'images/foto de perfil.jpg') }}" class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl border-2 border-white shadow-md object-cover shrink-0">
+                                <img src="{{ asset($turnoActual->ase_foto ?? 'images/foto de perfil asesor.png') }}" class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl border-2 border-white shadow-md object-cover shrink-0">
                                 <div>
                                     <p class="text-[8px] font-black text-emerald-600/60 uppercase tracking-widest">Módulo {{ sprintf('%02d', $turnoActual->modulo ?? '01') }}</p>
                                     <p class="text-xs lg:text-sm font-black text-emerald-900 leading-tight">{{ $asesorNombre }}</p>
@@ -305,7 +305,7 @@
                 <div class="hidden sm:block h-16 lg:h-24 w-px bg-white/10"></div>
                 <div class="relative shrink-0">
                     <div class="absolute inset-0 bg-white/10 rounded-[1.5rem] lg:rounded-[2rem] blur-xl"></div>
-                    <img id="modal-ase-foto" src="{{ asset('images/foto de perfil.jpg') }}" class="w-20 h-20 lg:w-32 lg:h-40 rounded-[1.5rem] lg:rounded-[2.5rem] border-2 lg:border-4 border-white/20 shadow-2xl object-cover relative z-10">
+                    <img id="modal-ase-foto" src="{{ asset('images/foto de perfil asesor.png') }}" class="w-20 h-20 lg:w-32 lg:h-40 rounded-[1.5rem] lg:rounded-[2.5rem] border-2 lg:border-4 border-white/20 shadow-2xl object-cover relative z-10">
                 </div>
             </div>
 
@@ -647,8 +647,9 @@
 
         function updateClock() {
             const now = new Date();
-            document.getElementById('current-time').textContent = now.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-            document.getElementById('current-date').textContent = now.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
+            document.getElementById('current-time').textContent = timeStr.toUpperCase();
+            document.getElementById('current-date').textContent = now.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', year: 'numeric', month: 'long', day: 'numeric' });
         }
         updateClock();
         setInterval(updateClock, 1000);

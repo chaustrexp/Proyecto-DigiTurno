@@ -48,18 +48,13 @@ class TurnoRepository
      * OV = Orientador de Víctimas → Victima + Empresario
      * AT = Asesor Total           → Todos los perfiles (General, Prioritario, Victima, Empresario)
      */
-    public function getWaitingForAsesor($tipoAsesor)
+    public function getWaitingForAsesor(Asesor $asesor)
     {
         $query = Turno::whereDate('tur_hora_fecha', now()->toDateString())
                       ->where('tur_estado', 'Espera');
 
-        if ($tipoAsesor === 'OV') {
-            return $query->whereIn('tur_perfil', ['Victima', 'Empresario'])
-                         ->orderByRaw("CASE WHEN tur_perfil = 'Empresario' THEN 1 ELSE 2 END ASC")
-                         ->orderBy('tur_hora_fecha', 'asc')
-                         ->get();
-        } elseif ($tipoAsesor === 'AT') {
-            // Asesor Total: atiende todos los perfiles con prioridad completa
+        if ($asesor->ase_capacitado_victimas) {
+            // Capacitado: Ve Víctimas primero, luego General/Prioritario/Empresario
             return $query->whereIn('tur_perfil', ['Victima', 'Empresario', 'Prioritario', 'General'])
                          ->orderByRaw("CASE
                              WHEN tur_perfil = 'Victima'     THEN 1
@@ -69,9 +64,12 @@ class TurnoRepository
                          ->orderBy('tur_hora_fecha', 'asc')
                          ->get();
         } else {
-            // OT: Prioritario primero, luego General
-            return $query->whereIn('tur_perfil', ['Prioritario', 'General'])
-                         ->orderByRaw("CASE WHEN tur_perfil = 'Prioritario' THEN 1 ELSE 2 END ASC")
+            // No capacitado: Solo General/Prioritario/Empresario
+            return $query->whereIn('tur_perfil', ['Empresario', 'Prioritario', 'General'])
+                         ->orderByRaw("CASE
+                             WHEN tur_perfil = 'Empresario'  THEN 1
+                             WHEN tur_perfil = 'Prioritario' THEN 2
+                             ELSE 3 END ASC")
                          ->orderBy('tur_hora_fecha', 'asc')
                          ->get();
         }
@@ -100,15 +98,8 @@ class TurnoRepository
             $query = Turno::whereDate('tur_hora_fecha', now()->toDateString())
                           ->where('tur_estado', 'Espera');
 
-            if ($tipoAsesor === 'OV') {
-                // Orientador de Víctimas (Role 1): Empresario → Victima
-                $turno = $query->whereIn('tur_perfil', ['Victima', 'Empresario'])
-                               ->orderByRaw("CASE WHEN tur_perfil = 'Empresario' THEN 1 ELSE 2 END ASC")
-                               ->orderBy('tur_hora_fecha', 'asc')
-                               ->lockForUpdate()
-                               ->first();
-            } elseif ($tipoAsesor === 'AT') {
-                // Asesor Total: atiende todos los perfiles con prioridad completa
+            if ($asesor->ase_capacitado_victimas) {
+                // Capacitado: Prioridad Victima → Empresario → Prioritario → General
                 $turno = $query->whereIn('tur_perfil', ['Victima', 'Empresario', 'Prioritario', 'General'])
                                ->orderByRaw("CASE
                                    WHEN tur_perfil = 'Victima'     THEN 1
@@ -119,13 +110,17 @@ class TurnoRepository
                                ->lockForUpdate()
                                ->first();
             } else {
-                // Orientador Técnico (Role 2): Prioritario → General (Relación 3:1)
+                // No capacitado: Solo General (Empresario, Prioritario, General)
+                // Usamos la lógica de balanceo 3:1 para Prioritario/General que existía antes
                 $count = Cache::get('prioritario_counter', 0);
                 
+                // Filtro base para no capacitados
+                $query->whereIn('tur_perfil', ['Empresario', 'Prioritario', 'General']);
+
                 if ($count < 3) {
-                    // Intentar obtener un Prioritario
                     $turno = $query->clone()
-                                   ->where('tur_perfil', 'Prioritario')
+                                   ->whereIn('tur_perfil', ['Empresario', 'Prioritario'])
+                                   ->orderByRaw("CASE WHEN tur_perfil = 'Empresario' THEN 1 ELSE 2 END ASC")
                                    ->orderBy('tur_hora_fecha', 'asc')
                                    ->lockForUpdate()
                                    ->first();
@@ -133,7 +128,6 @@ class TurnoRepository
                     if ($turno) {
                         Cache::put('prioritario_counter', $count + 1, now()->addDay());
                     } else {
-                        // Si no hay Prioritario, tomar un General y reiniciar contador
                         $turno = $query->clone()
                                        ->where('tur_perfil', 'General')
                                        ->orderBy('tur_hora_fecha', 'asc')
@@ -142,7 +136,6 @@ class TurnoRepository
                         Cache::put('prioritario_counter', 0, now()->addDay());
                     }
                 } else {
-                    // Se alcanzó el límite de 3 prioritarios, intentar obtener un General
                     $turno = $query->clone()
                                    ->where('tur_perfil', 'General')
                                    ->orderBy('tur_hora_fecha', 'asc')
@@ -152,9 +145,9 @@ class TurnoRepository
                     if ($turno) {
                         Cache::put('prioritario_counter', 0, now()->addDay());
                     } else {
-                        // Si no hay General, tomar un Prioritario de todos modos si existe
                         $turno = $query->clone()
-                                       ->where('tur_perfil', 'Prioritario')
+                                       ->whereIn('tur_perfil', ['Empresario', 'Prioritario'])
+                                       ->orderByRaw("CASE WHEN tur_perfil = 'Empresario' THEN 1 ELSE 2 END ASC")
                                        ->orderBy('tur_hora_fecha', 'asc')
                                        ->lockForUpdate()
                                        ->first();
