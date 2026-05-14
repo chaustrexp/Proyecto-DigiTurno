@@ -178,21 +178,25 @@ class CoordinadorController extends Controller
             ->pluck('count', 'pers_tipodoc')
             ->toArray();
 
-        // Advisor Status Real (Checking table atencion)
+        // Advisor Status Real (Checking table atencion and pausas)
         $asesoresStatus = Asesor::with('persona')->get()->map(function($ase) {
             $atencionActiva = Atencion::where('ASESOR_ase_id', $ase->ase_id)
                                     ->whereNull('atnc_hora_fin')
                                     ->with('turno.persona')
                                     ->first();
             
+            $pausaActiva = PausaAsesor::where('ASESOR_ase_id', $ase->ase_id)
+                                    ->whereNull('hora_fin')
+                                    ->first();
+            
             $estado = 'Libre';
             if ($atencionActiva) $estado = 'Atendiendo';
-            // MOCK: Si no tiene atención y su ase_id es par, simular descanso para demo visual
-            else if ($ase->ase_id % 2 == 0) $estado = 'Descanso';
+            else if ($pausaActiva) $estado = 'Descanso';
 
             return [
                 'nombre' => $ase->persona->pers_nombres . ' ' . $ase->persona->pers_apellidos,
                 'modulo' => $ase->ase_id,
+                'sede' => $ase->ase_sede,
                 'estado' => $estado,
                 'atencion' => $atencionActiva,
                 'inicio_sesion' => $atencionActiva ? $atencionActiva->atnc_hora_inicio->format('H:i') : '--:--',
@@ -251,6 +255,24 @@ class CoordinadorController extends Controller
             'tipo' => 'info'
         ];
 
+        // 4. Recientes Ausentes (últimos 15 min)
+        $recientesAusentes = Turno::where('tur_estado', 'Ausente')
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('atencion')
+                    ->whereColumn('atencion.TURNO_tur_id', 'turno.tur_id')
+                    ->where('atnc_hora_fin', '>', now()->subMinutes(15));
+            })->count();
+
+        if ($recientesAusentes > 0) {
+            $alertas[] = [
+                'msg' => "$recientesAusentes Ciudadano(s) marcado(s) como Ausente recientemente",
+                'time' => 'Reciente',
+                'tipo' => 'critica'
+            ];
+        }
+
         return view('coordinador.dashboard', compact(
             'usuariosHoy', 'enAtencion', 'enEspera', 'finalizados', 'ausentes', 'satisfaccion', 'tiempoMedio', 
             'flowLabels', 'flowValues', 'docData', 'asesoresStatus', 'alertas'
@@ -280,8 +302,8 @@ class CoordinadorController extends Controller
             'ID', 'Turno', 'Estado', 'Categoría', 'Servicio', 'Tipo Atención', 
             'Registro', 'Inicio Atención', 'Fin Atención', 
             'T. Espera (HH:MM:SS)', 'T. Atención (HH:MM:SS)', 
-            'Documento', 'Ciudadano', 'Teléfono', 
-            'Asesor', 'Módulo'
+            'Llamados', 'Documento', 'Ciudadano', 'Teléfono', 
+            'Asesor', 'Módulo', 'Observaciones'
         ];
         foreach($columns as $col) {
             $html .= '<th style="border: 2px solid #e2e8f0; vertical-align:middle; padding:10px; background-color:#f4f6f8;">' . $col . '</th>';
@@ -337,11 +359,13 @@ class CoordinadorController extends Controller
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; mso-number-format:\'\@\'; color:' . ($s_espera > 900 && !$h_inicio ? '#ef4444' : '#64748b') . ';">' . $f_espera . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold; mso-number-format:\'\@\';">' . $f_atencion . '</td>';
             
+            $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold;">' . ($t->atencion->atnc_veces_llamado ?? 1) . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $doc . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; font-weight:bold;">' . $solicitante . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $tel . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $asesorNom . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; background-color:#f1f5f9;">' . $modulo . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; font-size:9px; text-align:left;">' . ($t->atencion->atnc_observaciones ?? '-') . '</td>';
             $html .= '</tr>';
         }
 
@@ -449,9 +473,10 @@ class CoordinadorController extends Controller
             'pers_nombres'    => 'required|string|max:100',
             'pers_apellidos'  => 'required|string|max:100',
             'pers_telefono'   => 'nullable|string|max:20',
+            'ase_tipo_asesor' => 'required|in:OT,OV,AT',
+            'ase_sede'        => 'required|string|max:100',
             'ase_correo'      => 'required|email|max:100|unique:asesor,ase_correo',
             'ase_password'    => 'required|string|min:6',
-            'ase_tipo_asesor' => 'required|in:OT,OV,AT',
             'ase_nrocontrato' => 'nullable|string|max:50',
         ], [
             'pers_doc.unique'          => 'Este número de documento ya está registrado como asesor.',
@@ -462,7 +487,7 @@ class CoordinadorController extends Controller
 
         \DB::beginTransaction();
         try {
-            \App\Models\Persona::firstOrCreate(
+            $persona = \App\Models\Persona::firstOrCreate(
                 ['pers_doc' => $request->pers_doc],
                 [
                     'pers_tipodoc'   => $request->pers_tipodoc,
@@ -473,11 +498,12 @@ class CoordinadorController extends Controller
             );
 
             \App\Models\Asesor::create([
-                'PERSONA_pers_doc' => $request->pers_doc,
+                'PERSONA_pers_doc' => $persona->pers_doc,
                 'ase_correo'       => $request->ase_correo,
                 'ase_password'     => \Illuminate\Support\Facades\Hash::make($request->ase_password),
                 'ase_nrocontrato'  => $request->ase_nrocontrato ?? 'CONT-' . now()->format('Ymd'),
                 'ase_tipo_asesor'  => $request->ase_tipo_asesor,
+                'ase_sede'         => $request->ase_sede,
                 'ase_capacitado_victimas' => $request->has('ase_capacitado_victimas'),
                 'ase_genero'       => $request->ase_genero,
                 'ase_vigencia'     => now()->addYear()->toDateString(),
@@ -573,15 +599,20 @@ class CoordinadorController extends Controller
         $modulosStatus = Asesor::with('persona')->get()->map(function($ase) {
             $atencionActiva = Atencion::where('ASESOR_ase_id', $ase->ase_id)
                                     ->whereNull('atnc_hora_fin')
-                                    ->first();
+                                    ->exists();
+            
+            $pausaActiva = PausaAsesor::where('ASESOR_ase_id', $ase->ase_id)
+                                    ->whereNull('hora_fin')
+                                    ->exists();
             
             $estado = 'Libre';
             if ($atencionActiva) $estado = 'Atendiendo';
-            // Simulación de descanso para visualización si el ID es par (opcional, igual que en dashboard)
-            else if ($ase->ase_id % 2 == 0) $estado = 'Descanso';
+            else if ($pausaActiva) $estado = 'Descanso';
 
             return [
                 'modulo' => $ase->ase_id,
+                'sede' => $ase->ase_sede,
+                'nombre' => $ase->persona ? ($ase->persona->pers_nombres . ' ' . $ase->persona->pers_apellidos) : 'Asesor',
                 'estado' => strtoupper($estado),
             ];
         });
@@ -721,7 +752,7 @@ class CoordinadorController extends Controller
         // ── Turnos marcados como Ausente hoy ────────────────────────────────
         $turnosAusentesHoy = Turno::whereDate('tur_hora_fecha', $hoy)
             ->where('tur_estado', 'Ausente')
-            ->with('solicitante.persona')
+            ->with(['solicitante.persona', 'atencion'])
             ->orderBy('tur_hora_fecha', 'desc')
             ->get();
 

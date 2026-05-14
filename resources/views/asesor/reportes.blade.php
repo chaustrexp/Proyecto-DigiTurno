@@ -252,7 +252,10 @@
                 <tbody class="divide-y divide-gray-50">
                     @forelse($turnos as $atn)
                     @php
-                        $duracion = $atn->atnc_hora_fin ? $atn->atnc_hora_inicio->diffInMinutes($atn->atnc_hora_fin) . ' min' : '0 min';
+                        $h_ini = is_string($atn->atnc_hora_inicio) ? \Carbon\Carbon::parse($atn->atnc_hora_inicio) : $atn->atnc_hora_inicio;
+                        $h_fin = $atn->atnc_hora_fin ? (is_string($atn->atnc_hora_fin) ? \Carbon\Carbon::parse($atn->atnc_hora_fin) : $atn->atnc_hora_fin) : null;
+                        $duracionSec = $h_fin ? $h_ini->diffInSeconds($h_fin) : 0;
+                        $duracion = $h_fin ? sprintf('%02d:%02d:%02d', floor($duracionSec/3600), floor(($duracionSec/60)%60), $duracionSec%60) : '00:00:00';
                         $status = $atn->atnc_hora_fin ? 'Completado' : 'En proceso';
                     @endphp
                     <tr class="group hover:bg-gray-50/50 transition-colors">

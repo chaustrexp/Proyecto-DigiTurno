@@ -601,25 +601,40 @@ setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,5000); },300);
         </div>
 
         <!-- Body -->
-        <div class="p-8 space-y-6">
-            <div class="flex gap-2">
-                <div class="flex-1 relative">
-                    <i class="fa-solid fa-id-card absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="number" id="consultarDoc" placeholder="Ingrese su número de documento" 
-                           class="w-full pl-12 pr-4 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 focus:outline-none focus:border-sena-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+        <div class="p-8 flex flex-col md:flex-row gap-8">
+            <!-- Izquierda: Teclado y Campo -->
+            <div class="flex-1 space-y-6">
+                <!-- Input Display -->
+                <div class="w-full bg-slate-50 border-4 border-slate-100 rounded-2xl px-6 py-4 flex flex-col items-center shadow-inner relative">
+                    <span id="consultarDocDisplay" class="text-3xl font-black text-[#1e293b] tracking-widest flex-1 text-center truncate w-full min-h-[40px]"></span>
+                    <input type="hidden" id="consultarDoc" value="">
+                    <span class="text-[10px] font-bold text-slate-400 mt-1 tracking-widest uppercase">Número de Documento</span>
                 </div>
-                <button onclick="consultarTurno()" class="px-8 bg-sena-navy text-white font-black rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
+
+                <!-- Numpad -->
+                <div class="grid grid-cols-3 gap-3 w-full">
+                    @for($i=1;$i<=9;$i++)
+                    <button type="button" onclick="pressConsultarNum('{{ $i }}'); playKey();" class="h-14 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-sena-100 rounded-xl flex items-center justify-center text-2xl font-black text-slate-700 shadow-sm hover:shadow-md transition-all active:scale-95">{{ $i }}</button>
+                    @endfor
+                    <button type="button" onclick="clearConsultarNum(); playKey();" class="h-14 bg-rose-50 hover:bg-rose-100 rounded-xl flex items-center justify-center text-xl text-rose-500 shadow-sm transition-all active:scale-95"><i class="fa-solid fa-trash-can"></i></button>
+                    <button type="button" onclick="pressConsultarNum('0'); playKey();" class="h-14 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-sena-100 rounded-xl flex items-center justify-center text-2xl font-black text-slate-700 shadow-sm hover:shadow-md transition-all active:scale-95">0</button>
+                    <button type="button" onclick="backspaceConsultarNum(); playKey();" class="h-14 bg-slate-50 hover:bg-white rounded-xl flex items-center justify-center text-xl text-slate-400 shadow-sm transition-all active:scale-95"><i class="fa-solid fa-delete-left"></i></button>
+                </div>
+
+                <button onclick="consultarTurno(); playKey();" class="w-full py-5 bg-sena-navy text-white font-black rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-lg">
                     <i class="fa-solid fa-search"></i>
-                    <span>Buscar</span>
+                    <span>Buscar Turno</span>
                 </button>
             </div>
 
-            <!-- Result Area -->
-            <div id="consultarResult" class="min-h-[200px] flex flex-col items-center justify-center text-center space-y-4">
-                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 text-4xl">
-                    <i class="fa-solid fa-ticket"></i>
+            <!-- Derecha: Resultados -->
+            <div class="flex-1 bg-slate-50/50 rounded-3xl border-2 border-slate-100 p-6 flex flex-col">
+                <div id="consultarResult" class="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 text-4xl">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <p class="text-slate-400 font-medium max-w-xs mx-auto">Ingrese su documento para consultar el estado de su turno</p>
                 </div>
-                <p class="text-slate-400 font-medium max-w-xs mx-auto">Ingrese su documento para consultar el estado de su turno</p>
             </div>
         </div>
     </div>
@@ -627,6 +642,27 @@ setTimeout(()=>{ playSuccessNotification(); setTimeout(closeModal,5000); },300);
 
 <script>
 // Logic for Consultation
+let consultarDocNumber = "";
+
+function pressConsultarNum(n) {
+    if (consultarDocNumber.length < 15) consultarDocNumber += n;
+    updateConsultarNumDisplay();
+}
+function backspaceConsultarNum() {
+    consultarDocNumber = consultarDocNumber.slice(0, -1);
+    updateConsultarNumDisplay();
+}
+function clearConsultarNum() {
+    consultarDocNumber = "";
+    updateConsultarNumDisplay();
+}
+function updateConsultarNumDisplay() {
+    const d = document.getElementById('consultarDocDisplay');
+    d.innerText = consultarDocNumber || "_ _ _ _ _ _ _ _ _ _";
+    d.style.color = consultarDocNumber ? "#1e293b" : "#cbd5e1";
+    document.getElementById('consultarDoc').value = consultarDocNumber;
+}
+
 function openConsultarModal() {
     const modal = document.getElementById('consultarModal');
     const content = document.getElementById('consultarModalContent');
@@ -637,7 +673,8 @@ function openConsultarModal() {
         content.classList.remove('scale-95');
         content.classList.add('scale-100');
     }, 10);
-    document.getElementById('consultarDoc').focus();
+    // Reset state each time modal is opened
+    clearConsultarNum();
 }
 
 function closeConsultarModal() {
@@ -650,9 +687,9 @@ function closeConsultarModal() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         // Reset state
-        document.getElementById('consultarDoc').value = '';
+        clearConsultarNum();
         document.getElementById('consultarResult').innerHTML = `
-            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 text-4xl">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 text-4xl">
                 <i class="fa-solid fa-ticket"></i>
             </div>
             <p class="text-slate-400 font-medium max-w-xs mx-auto">Ingrese su documento para consultar el estado de su turno</p>

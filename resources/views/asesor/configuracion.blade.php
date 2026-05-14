@@ -39,7 +39,7 @@
                             <span class="absolute bottom-2 -right-2 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
                         </div>
                         <h3 class="text-lg font-black text-gray-900 leading-tight mt-4 mb-1">{{ $asesor->persona->pers_nombres ?? 'Carlos Ruiz' }}</h3>
-                        <p class="text-[10px] font-black text-sena-500 uppercase tracking-widest bg-sena-50 px-3 py-1 rounded-lg inline-block">Asesor Módulo {{ $asesor->modulo ?? '04' }}</p>
+                        <p class="text-[10px] font-black text-sena-500 uppercase tracking-widest bg-sena-50 px-3 py-1 rounded-lg inline-block">Asesor Módulo {{ sprintf('%02d', $asesor->ase_id ?? 0) }}</p>
                         
                         <div class="mt-6 pt-6 border-t border-gray-50">
                             <button class="w-full bg-gray-900 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest hover:bg-black transition-colors flex items-center justify-center space-x-2 shadow-lg">
@@ -82,7 +82,7 @@
                                         <div class="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
                                             <i class="fa-solid fa-hashtag text-[9px]"></i>
                                         </div>
-                                        <input type="text" value="{{ $asesor->modulo ?? '04' }}" class="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-sm font-black text-gray-700 outline-none focus:ring-2 focus:ring-sena-500 transition-all shadow-inner" readonly>
+                                        <input type="text" value="{{ sprintf('%02d', $asesor->ase_id ?? 0) }}" class="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-sm font-black text-gray-700 outline-none focus:ring-2 focus:ring-sena-500 transition-all shadow-inner" readonly>
                                     </div>
                                 </div>
                                 <div class="group">
@@ -91,7 +91,7 @@
                                         <div class="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
                                             <i class="fa-solid fa-building text-[9px]"></i>
                                         </div>
-                                        <input type="text" value="Sede Central Antioquia" class="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-sm font-black text-gray-700 outline-none transition-all shadow-inner truncate" readonly title="Sede Central Antioquia">
+                                        <input type="text" value="{{ $asesor->ase_sede ?? 'Sede Norte de Santander' }}" class="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-sm font-black text-gray-700 outline-none transition-all shadow-inner truncate" readonly title="{{ $asesor->ase_sede ?? 'Sede Norte de Santander' }}">
                                     </div>
                                 </div>
                             </div>

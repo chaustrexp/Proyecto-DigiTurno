@@ -287,7 +287,7 @@
             </div>
 
             <div class="space-y-1 lg:space-y-4 w-full">
-                <p class="text-xs lg:text-xl 2xl:text-2xl font-black text-sena-yellow uppercase tracking-[0.4em] drop-shadow-sm">Llamando al turno</p>
+                <p id="modal-llamado-label" class="text-xs lg:text-xl 2xl:text-2xl font-black text-sena-yellow uppercase tracking-[0.4em] drop-shadow-sm">Llamando al turno</p>
                 <h3 id="modal-turno-numero" class="text-5xl lg:text-7xl 2xl:text-9xl font-poppins font-black text-white tracking-tighter leading-none drop-shadow-2xl italic">
                     ---
                 </h3>
@@ -329,6 +329,7 @@
         
         let lastTurnIds = @json($turnosEnEspera->pluck('tur_id'));
         let lastCurrentAtncId = @json($turnoActual->atnc_id ?? null);
+        let lastCallCount = @json($turnoActual->atnc_veces_llamado ?? 1);
         const pollingInterval = 3000;
 
         // --- LÓGICA DE ROTACIÓN (24 HORAS) ---
@@ -464,12 +465,19 @@
                     lastTurnIds = currentTurnIds;
                 }
 
-                if (data.turnoActual && data.turnoActual.atnc_id !== lastCurrentAtncId) {
-                    mostrarModalLlamado(data.turnoActual);
-                    updateCurrentTurnBox(data.turnoActual);
-                    lastCurrentAtncId = data.turnoActual.atnc_id;
-                } else if (!data.turnoActual) {
+                if (data.turnoActual) {
+                    const atncChanged = data.turnoActual.atnc_id !== lastCurrentAtncId;
+                    const callIncreased = data.turnoActual.atnc_veces_llamado > lastCallCount;
+
+                    if (atncChanged || callIncreased) {
+                        mostrarModalLlamado(data.turnoActual);
+                        updateCurrentTurnBox(data.turnoActual);
+                        lastCurrentAtncId = data.turnoActual.atnc_id;
+                        lastCallCount = data.turnoActual.atnc_veces_llamado;
+                    }
+                } else {
                     lastCurrentAtncId = null;
+                    lastCallCount = 1;
                     updateCurrentTurnBox(null);
                 }
             } catch (error) {
@@ -480,7 +488,15 @@
         function mostrarModalLlamado(turno) {
             const modal = document.getElementById('llamado-modal');
             const innerModal = modal.querySelector('div');
+            const labelEl = document.getElementById('modal-llamado-label');
             
+            // Texto del llamado
+            if (turno.atnc_veces_llamado > 1) {
+                labelEl.textContent = `${turno.atnc_veces_llamado}º RE-LLAMADO AL TURNO`;
+            } else {
+                labelEl.textContent = 'LLAMANDO AL TURNO';
+            }
+
             document.getElementById('modal-turno-numero').textContent = turno.tur_numero;
             document.getElementById('modal-ciudadano-nombre').textContent = turno.ciudadano || 'Ciudadano';
             const moduloFormatted = String(turno.modulo).padStart(2, '0');

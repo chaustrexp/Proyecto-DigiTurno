@@ -47,7 +47,7 @@ Route::post('/coordinador/register', [CoordinadorController::class, 'register'])
 
 // Coordinador
 Route::get('/coordinador', [CoordinadorController::class, 'index'])->name('coordinador.index');
-Route::get('/api/coordinador/stats', [ApiController::class, 'getCoordinatorStats'])->name('coordinador.api.stats');
+Route::get('/api/coordinador/stats', [CoordinadorController::class, 'getStats'])->name('coordinador.api.stats');
 Route::get('/dashboard-coordinador', [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
 Route::get('/coordinador/export', [CoordinadorController::class, 'export'])->name('coordinador.export');
 Route::get('/coordinador/reportes', [CoordinadorController::class, 'reportes'])->name('coordinador.reportes');
@@ -63,6 +63,8 @@ Route::get('/manual/asesor', [AsesorController::class, 'manualAsesor'])->name('m
 Route::post('/asesor/llamar', [AsesorController::class, 'llamar'])->name('asesor.llamar');
 Route::post('/asesor/finalizar/{atnc_id}', [AsesorController::class, 'finalizar'])->name('asesor.finalizar');
 Route::post('/asesor/ausente/{atnc_id}', [AsesorController::class, 'ausente'])->name('asesor.ausente');
+Route::post('/asesor/rellamar/{atnc_id}', [AsesorController::class, 'rellamar'])->name('asesor.rellamar');
+Route::post('/asesor/iniciar/{atnc_id}', [AsesorController::class, 'iniciar'])->name('asesor.iniciar');
 Route::post('/asesor/persona/update/{pers_doc}', [AsesorController::class, 'updatePersona'])->name('asesor.persona.update');
 
 // CU-03: Receso del Asesor

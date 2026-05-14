@@ -28,7 +28,7 @@
             <div class="p-7 space-y-5">
                 <div>
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nombre de la Sede</label>
-                    <input id="cfg-nombre-sede" type="text" value="Sede Central - SENA Regional Antioquia"
+                    <input id="cfg-nombre-sede" type="text" value="Sede Central - SENA Regional Norte de Santander"
                         class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-sena-500 outline-none transition-all">
                 </div>
                 <div class="grid grid-cols-2 gap-4">

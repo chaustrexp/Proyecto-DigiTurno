@@ -1,4 +1,4 @@
-﻿@extends('layouts.asesor')
+@extends('layouts.asesor')
 
 @section('title', 'Dashboard - SENA APE')
 
@@ -32,15 +32,9 @@
                         <div class="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30">
                             <p class="text-[10px] font-black text-white tracking-widest" id="atencion-timer" data-start="{{ \Carbon\Carbon::parse($atencion->atnc_hora_inicio)->timestamp }}">00:00:00</p>
                         </div>
-                        <div class="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1 border border-white/20">
+                        <div class="flex items-center gap-1 bg-white/10 rounded-xl px-4 py-1 border border-white/20">
                             <span class="text-[8px] font-black text-white/60 uppercase mr-1">Módulo</span>
-                            <button type="button" onclick="cambiarModulo(-1)" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90">
-                                <i class="fa-solid fa-chevron-left text-white text-[9px]"></i>
-                            </button>
                             <span id="modulo-display" class="text-sm font-black text-white w-8 text-center">{{ sprintf('%02d', $asesor->ase_id ?? '01') }}</span>
-                            <button type="button" onclick="cambiarModulo(1)" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90">
-                                <i class="fa-solid fa-chevron-right text-white text-[9px]"></i>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -62,8 +56,29 @@
                     </button>
                 </div>
 
-                {{-- Mientras hay atención activa: solo Finalizar y Ausente --}}
+                {{-- Mientras hay atención activa: solo Finalizar, Volver a llamar y Ausente --}}
                 <div class="mt-6 relative z-10 space-y-3">
+                    @if($atencion && !$atencion->atnc_hora_fin)
+                    <div class="flex flex-col gap-3 bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-sena-yellow/20 text-sena-yellow rounded-lg flex items-center justify-center">
+                                    <i class="fa-solid fa-bullhorn text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[8px] font-black text-white/50 uppercase tracking-widest">Llamados al Ciudadano</p>
+                                    <p class="text-xs font-black text-white">Llamado {{ $atencion->atnc_veces_llamado ?? 1 }} de 3</p>
+                                </div>
+                            </div>
+                            <form id="form-rellamar" action="{{ route('asesor.rellamar', $atencion->atnc_id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="bg-sena-yellow hover:bg-sena-yellow/90 text-sena-blue font-black px-4 py-2.5 rounded-lg text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-sena-yellow/20">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i> Re-Llamar <span id="auto-timer" class="ml-1 opacity-60"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
                     {{-- Campo de observaciones --}}
                     <div>
                         <label class="block text-[9px] font-black text-white/70 uppercase tracking-widest mb-1.5">
@@ -413,29 +428,101 @@
         }, 1000);
     }
 
-    // Cronómetro de pausa (Persistente con localStorage)
+    // Cronómetro de pausa (Persistente con localStorage y servidor)
     const pauseDisplay = document.getElementById('pause-timer-display');
     if (pauseDisplay) {
-        let pauseStartTime = localStorage.getItem('ape_pause_start');
+        // Preferimos el tiempo del servidor si está disponible, sino el del localStorage
+        let pauseStartTime = @json($pausaActiva ? $pausaActiva->hora_inicio->timestamp * 1000 : null);
+        
         if (!pauseStartTime) {
-            pauseStartTime = Date.now();
+            pauseStartTime = localStorage.getItem('ape_pause_start');
+            if (!pauseStartTime) {
+                pauseStartTime = Date.now();
+                localStorage.setItem('ape_pause_start', pauseStartTime);
+            }
+        } else {
             localStorage.setItem('ape_pause_start', pauseStartTime);
         }
 
         const hEl = document.getElementById('pause-hours');
         const mEl = document.getElementById('pause-minutes');
         const sEl = document.getElementById('pause-seconds');
+        
+        const PAUSE_LIMIT_SEC = 15 * 60; // 15 minutos
+        let alertsSent = {
+            fiveMin: false,
+            twoMin: false,
+            expired: false
+        };
 
-        setInterval(() => {
-            const diff = Math.floor((Date.now() - parseInt(pauseStartTime)) / 1000);
+        const pauseInterval = setInterval(() => {
+            const now = Date.now();
+            const diff = Math.floor((now - parseInt(pauseStartTime)) / 1000);
+            
+            if (diff < 0) return; // Prevent negative times if server clock is slightly off
+
             const h = Math.floor(diff / 3600).toString().padStart(2, '0');
             const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
             const s = (diff % 60).toString().padStart(2, '0');
             
-            hEl.textContent = h;
-            mEl.textContent = m;
-            sEl.textContent = s;
+            if (hEl) hEl.textContent = h;
+            if (mEl) mEl.textContent = m;
+            if (sEl) sEl.textContent = s;
+
+            // Lógica de Notificaciones (3 veces)
+            // 1. A los 10 minutos (faltan 5)
+            if (diff >= 600 && diff < 605 && !alertsSent.fiveMin) {
+                notifyAdvisor("⏳ Te quedan 5 minutos de descanso.", "info");
+                alertsSent.fiveMin = true;
+            }
+            // 2. A los 13 minutos (faltan 2)
+            if (diff >= 780 && diff < 785 && !alertsSent.twoMin) {
+                notifyAdvisor("⚠️ ¡Atención! Solo quedan 2 minutos de receso.", "warning");
+                alertsSent.twoMin = true;
+            }
+            // 3. Al cumplir los 15 minutos (Vencido)
+            if (diff >= 900 && !alertsSent.expired) {
+                notifyAdvisor("🚨 ¡TIEMPO AGOTADO! Por favor regresa a tu puesto.", "error");
+                alertsSent.expired = true;
+                // Hacer que el cronómetro parpadee en rojo
+                if (pauseDisplay) pauseDisplay.classList.add('animate-pulse', 'text-red-600');
+            }
         }, 1000);
+    }
+
+    function notifyAdvisor(message, type) {
+        // Intentar usar la API de Notificaciones del navegador si está permitida
+        if (Notification.permission === "granted") {
+            new Notification("Recordatorio de Receso", { body: message, icon: "/images/logo.png" });
+        }
+        
+        // Alert visual en pantalla
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'error' ? 'bg-red-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-blue-600');
+        alertDiv.className = `fixed bottom-10 right-10 ${bgColor} text-white px-8 py-4 rounded-2xl shadow-2xl z-[500] animate-bounce flex items-center space-x-4 border-2 border-white`;
+        alertDiv.innerHTML = `
+            <i class="fa-solid ${type === 'error' ? 'fa-triangle-exclamation' : 'fa-clock'} text-xl"></i>
+            <span class="font-black uppercase tracking-widest text-xs">${message}</span>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Sonido de alerta (opcional/simple)
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(type === 'error' ? 880 : 440, audioCtx.currentTime);
+            osc.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } catch(e) {}
+
+        setTimeout(() => alertDiv.remove(), 8000);
+    }
+
+    // Pedir permiso para notificaciones al cargar
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
     }
 
     // Actualización de tiempo relativo de llegada
@@ -551,6 +638,21 @@
     }, 20000); // 20 segundos
 
     // AUTO-LLAMADO AUTOMÁTICO (Nueva Función Solicitada)
+    // Lógica para re-llamar cada 20 segundos hasta 3 veces
+    @if($atencion && ($atencion->atnc_veces_llamado ?? 1) < 3)
+        let autoSeconds = 20;
+        const autoTimerEl = document.getElementById('auto-timer');
+        const autoInterval = setInterval(() => {
+            autoSeconds--;
+            if (autoTimerEl) autoTimerEl.textContent = `(${autoSeconds}s)`;
+            
+            if (autoSeconds <= 0) {
+                clearInterval(autoInterval);
+                document.getElementById('form-rellamar').submit();
+            }
+        }, 1000);
+    @endif
+
     // Si no hay atención activa Y hay turnos en espera Y no estamos en pausa
     @if(!$atencion && count($turnosEnEspera) > 0 && !$isPause)
         const autoForm = document.getElementById('autoCallForm');

@@ -168,13 +168,16 @@ class AsesorController extends Controller
         $atencion = $this->turnoRepo->getActiveAttentionForAsesor($ase_id);
 
         // Cola de espera filtrada por el rol del asesor según CU-02
-        // OT = Orientador Técnico → General + Prioritario
-        // OV = Orientador de Víctimas → Victima + Empresario
         $tipoAsesor = $asesor->ase_tipo_asesor ?? 'OT';
         $turnosEnEspera = $this->turnoRepo->getWaitingForAsesor($asesor);
         $equipoAsesores = $this->getEquipoAsesores();
 
-        return view('asesor.panel', compact('asesor', 'atencion', 'turnosEnEspera', 'equipoAsesores'));
+        // Pausa activa
+        $pausaActiva = \App\Models\PausaAsesor::where('ASESOR_ase_id', $ase_id)
+            ->whereNull('hora_fin')
+            ->first();
+
+        return view('asesor.panel', compact('asesor', 'atencion', 'turnosEnEspera', 'equipoAsesores', 'pausaActiva'));
     }
 
     private function getEquipoAsesores()
@@ -319,8 +322,8 @@ class AsesorController extends Controller
             $html .= '</tr>';
 
             // ── Fila 4: Cabeceras de columna ──────────────────────────────
-            $headers_col = ['N°', 'Turno', 'Servicio', 'Categoría', 'Ciudadano', 'Teléfono', 'Registro', 'Inicio', 'Fin', 'T. Espera', 'T. Atención', 'Estado'];
-            // 12 columnas
+            $headers_col = ['N°', 'Turno', 'Servicio', 'Categoría', 'Ciudadano', 'Teléfono', 'Registro', 'Inicio', 'Fin', 'T. Espera', 'T. Atención', 'Llamados', 'Estado', 'Observaciones'];
+            // 14 columnas
             $html .= '<tr style="background-color:#1a7a36; color:#ffffff; font-weight:bold; height:40px; text-align:center;">';
             foreach ($headers_col as $h) {
                 $html .= '<th style="border:2px solid #15803d; vertical-align:middle; padding:6px 10px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">' . $h . '</th>';
@@ -385,7 +388,9 @@ class AsesorController extends Controller
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; color:#374151; padding:4px 8px; font-size:10px;">' . $horaFin . '</td>';
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; mso-number-format:\'\@\'; padding:4px 8px; font-size:10px;">' . $f_espera . '</td>';
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; mso-number-format:\'\@\'; padding:4px 8px; font-size:10px;">' . $f_atencion . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; padding:4px 8px; font-size:10px;">' . ($atn->atnc_veces_llamado ?? 1) . '</td>';
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:' . $estadoColor . '; background-color:' . $estadoBg . '; padding:4px 8px; font-size:10px;">' . $estado . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; font-size:9px; padding:4px 8px;">' . ($atn->atnc_observaciones ?? '-') . '</td>';
                 $html .= '</tr>';
                 $row++;
             }
@@ -551,6 +556,32 @@ class AsesorController extends Controller
         return redirect()->route('asesor.index')->with('success', "Llamando al turno {$atencion->turno->tur_numero}");
     }
 
+    public function rellamar($atnc_id)
+    {
+        $atencion = Atencion::with('turno')->findOrFail($atnc_id);
+        
+        // Incrementar el contador de llamados (máximo 3)
+        $nuevasVeces = ($atencion->atnc_veces_llamado ?? 0) + 1;
+        
+        if ($nuevasVeces > 3) {
+            return back()->with('warning', 'Ya se ha llamado a este ciudadano 3 veces. Considere marcarlo como ausente.');
+        }
+
+        $atencion->update([
+            'atnc_veces_llamado' => $nuevasVeces,
+            'atnc_hora_inicio' => now() // Actualizamos la hora para que aparezca como "nuevo" en pantalla
+        ]);
+
+        return back()->with('success', "Re-llamando al turno {$atencion->turno->tur_numero} ({$nuevasVeces}/3)");
+    }
+
+    public function iniciar($atnc_id)
+    {
+        $atencion = Atencion::findOrFail($atnc_id);
+        $atencion->update(['atnc_hora_real_inicio' => now()]);
+        return back()->with('success', 'Atención iniciada correctamente.');
+    }
+
     public function finalizar($atnc_id)
     {
         if (!$this->checkAuth())
@@ -634,7 +665,7 @@ class AsesorController extends Controller
         $asesor = Asesor::find($ase_id);
 
         if (!$asesor) {
-            return back()->with('error', 'Sesión no válida.');
+            return back()->with('error', 'No se puede iniciar receso en modo de prueba. Debe iniciar sesión con un Asesor registrado en el sistema.');
         }
 
         $resultado = $this->turnoRepo->iniciarReceso($asesor);
@@ -663,7 +694,7 @@ class AsesorController extends Controller
         $asesor = Asesor::find($ase_id);
 
         if (!$asesor) {
-            return back()->with('error', 'Sesión no válida.');
+            return back()->with('error', 'No se puede finalizar receso en modo de prueba. Debe iniciar sesión con un Asesor registrado en el sistema.');
         }
 
         $resultado = $this->turnoRepo->finalizarReceso($asesor);

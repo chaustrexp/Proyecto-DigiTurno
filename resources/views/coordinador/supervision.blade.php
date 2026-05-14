@@ -303,6 +303,12 @@
                                 <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
                                     D.I. {{ $ta->solicitante->persona->pers_doc ?? '—' }} · {{ $ta->tur_servicio }}
                                 </p>
+                                @if($ta->atencion && $ta->atencion->observaciones)
+                                <div class="mt-2 bg-rose-50/50 p-2 rounded-lg border border-rose-100/30">
+                                    <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1 italic">Conclusión / Observaciones del Trámite:</p>
+                                    <p class="text-[10px] text-gray-600 italic">"{{ $ta->atencion->observaciones }}"</p>
+                                </div>
+                                @endif
                             </div>
                         </div>
                         <div class="text-right">
@@ -501,15 +507,37 @@
         actualizarReloj();
         setInterval(actualizarReloj, 1000);
         
-        // Disparar alerta según criticidad
-        @if($turnosEspera60->count() > 0 || $atencionesLlamadas60->count() > 0)
-            const maxModal = document.getElementById('maximaAlertaModal');
-            maxModal.classList.remove('hidden');
-            maxModal.classList.add('flex');
-            try { playAlertSound(); } catch(e) {}
-        @elseif($turnosEspera20->count() > 0)
-            setTimeout(() => toggleAlertModal(true), 500);
-        @endif
+        // IDs de turnos críticos actuales (Solo cuando el asesor lleva > 60s esperando al ciudadano)
+        const currentCriticalIds = [
+            @foreach($atencionesLlamadas60 as $at) 'A{{ $at->atnc_id }}', @endforeach
+        ];
+
+        // Disparar alerta según criticidad (Solo si hay nuevos turnos que no se han alertado en esta sesión)
+        if (currentCriticalIds.length > 0) {
+            const alertedIds = JSON.parse(sessionStorage.getItem('alertedCriticalIds') || '[]');
+            const newCriticalIds = currentCriticalIds.filter(id => !alertedIds.includes(id));
+
+            if (newCriticalIds.length > 0) {
+                let alertCount = 0;
+                const triggerAlert = () => {
+                    const maxModal = document.getElementById('maximaAlertaModal');
+                    maxModal.classList.remove('hidden');
+                    maxModal.classList.add('flex');
+                    try { playAlertSound(); } catch(e) {}
+                    
+                    alertCount++;
+                    if (alertCount < 3) {
+                        // Esperar 5 segundos para el siguiente llamado si se cierra o persiste
+                        setTimeout(triggerAlert, 5000);
+                    }
+                };
+                
+                triggerAlert();
+                
+                // Guardar los IDs ya alertados para no repetir el modal
+                sessionStorage.setItem('alertedCriticalIds', JSON.stringify([...new Set([...alertedIds, ...currentCriticalIds])]));
+            }
+        }
 
         // Auto-refresh cada 10s
         setTimeout(() => location.reload(), 10000);

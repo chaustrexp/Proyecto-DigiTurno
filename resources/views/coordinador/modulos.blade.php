@@ -148,6 +148,16 @@
                     </div>
 
                     <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sede Asignada *</label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-300 group-focus-within:text-sena-500 transition-colors">
+                                <i class="fa-solid fa-building-circle-check text-xs"></i>
+                            </div>
+                            <input type="text" name="ase_sede" required value="{{ old('ase_sede', 'Sede Norte de Santander') }}" placeholder="Nombre de la sede" class="w-full bg-gray-50/50 border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold text-gray-700 focus:outline-none focus:ring-4 focus:ring-sena-500/10 focus:border-sena-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número de Identificación *</label>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-300 group-focus-within:text-sena-500 transition-colors">
@@ -434,6 +444,16 @@
                 </div>
 
                 <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sede Asignada *</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-sena-500 transition-colors">
+                            <i class="fa-solid fa-building-circle-check text-xs"></i>
+                        </div>
+                        <input type="text" name="ase_sede" id="edit-ase_sede" required class="w-full bg-gray-50/50 border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold text-gray-700 focus:outline-none focus:ring-4 focus:ring-sena-500/10 focus:border-sena-500 transition-all">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Teléfono de Contacto</label>
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-300 group-focus-within:text-sena-500 transition-colors">
@@ -546,8 +566,9 @@
             document.querySelector('#modal-create [name="ase_foto"]').value = photoPath;
         } else {
             document.getElementById('edit-ase_foto').value = photoPath;
-            document.getElementById('edit-preview-photo').src = '/' + photoPath;
-            document.getElementById('edit-preview-photo-large').src = '/' + photoPath;
+            const baseUrl = "{{ asset('') }}";
+            document.getElementById('edit-preview-photo').src = baseUrl + photoPath;
+            document.getElementById('edit-preview-photo-large').src = baseUrl + photoPath;
         }
     }
 
@@ -564,6 +585,7 @@
         document.getElementById('edit-pers_telefono').value = persona?.pers_telefono ?? '';
         document.getElementById('edit-ase_correo').value = asesor.ase_correo ?? '';
         document.getElementById('edit-ase_nrocontrato').value = asesor.ase_nrocontrato ?? '';
+        document.getElementById('edit-ase_sede').value = asesor.ase_sede ?? '';
         document.getElementById('edit-ase_foto').value = asesor.ase_foto ?? 'images/foto de perfil asesor.png';
         document.getElementById('edit-ase_capacitado_victimas').checked = !!asesor.ase_capacitado_victimas;
         
@@ -573,16 +595,22 @@
             document.getElementById('edit-ase_genero-M').checked = true;
         }
         const photoPath = asesor.ase_foto ?? 'images/foto de perfil asesor.png';
-        document.getElementById('edit-preview-photo').src = `/${photoPath}`;
-        document.getElementById('edit-preview-photo-large').src = `/${photoPath}`;
+        const baseUrl = "{{ asset('') }}";
+        document.getElementById('edit-preview-photo').src = baseUrl + photoPath;
+        document.getElementById('edit-preview-photo-large').src = baseUrl + photoPath;
         document.getElementById('edit-modal-subtitle').textContent = 'Editando: ' + (persona?.pers_nombres ?? 'Asesor') + ' ' + (persona?.pers_apellidos ?? '');
-        document.getElementById('form-edit').action = `/coordinador/modulos/update/${asesor.ase_id}`;
+        
+        // Fix: Use the route helper to generate the base URL
+        const updateUrl = "{{ route('coordinador.asesores.update', ':id') }}";
+        document.getElementById('form-edit').action = updateUrl.replace(':id', asesor.ase_id);
+        
         openModal('modal-edit');
     }
 
     function openDeleteModal(id, name) {
         document.getElementById('delete-asesor-name').textContent = name;
-        document.getElementById('form-delete').action = `/coordinador/modulos/delete/${id}`;
+        const deleteUrl = "{{ route('coordinador.asesores.delete', ':id') }}";
+        document.getElementById('form-delete').action = deleteUrl.replace(':id', id);
         openModal('modal-delete');
     }
 

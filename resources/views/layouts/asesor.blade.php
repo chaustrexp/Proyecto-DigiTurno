@@ -119,7 +119,7 @@
                     </form>
                 </div>
                 <div class="px-1">
-                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Módulo {{ $asesor->modulo ?? '04' }}</p>
+                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Módulo {{ sprintf('%02d', $asesor->ase_id ?? 0) }}</p>
                 </div>
             </div>
             <div class="bg-gray-50 rounded-xl p-3 mt-4">
@@ -142,11 +142,16 @@
                         <div class="relative">
                             <img src="{{ asset($miembro->ase_foto) }}" class="w-7 h-7 rounded-full object-cover {{ $miembro->estado_display === 'ATENDIENDO' ? '' : 'grayscale' }} group-hover:grayscale-0 transition-all" alt="Asesor">
                             <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white 
-                                {{ $miembro->estado_display === 'ATENDIENDO' ? 'bg-emerald-500' : ($miembro->estado_display === 'EN RECESO' ? 'bg-amber-500' : 'bg-gray-300') }}"></span>
+                                {{ $miembro->estado_display === 'ATENDIENDO' ? 'bg-red-500' : ($miembro->estado_display === 'EN RECESO' ? 'bg-yellow-500' : 'bg-green-500') }}"></span>
                         </div>
                         <div>
                             <p class="text-[9px] font-black text-gray-800 leading-tight">{{ $miembro->persona->pers_nombres }} {{ Str::limit($miembro->persona->pers_apellidos, 1, '.') }}</p>
-                            <p class="text-[7px] font-bold text-gray-400 uppercase tracking-widest">Módulo {{ $miembro->modulo_nro }}</p>
+                            <div class="flex items-center space-x-1 mt-0.5">
+                                <p class="text-[7px] font-bold text-gray-400 uppercase tracking-widest">Módulo {{ $miembro->modulo_nro }}</p>
+                                <span class="text-[6px] font-black px-1 rounded-sm border {{ $miembro->estado_display === 'ATENDIENDO' ? 'text-red-500 border-red-200 bg-red-50' : ($miembro->estado_display === 'EN RECESO' ? 'text-yellow-600 border-yellow-200 bg-yellow-50' : 'text-green-600 border-green-200 bg-green-50') }} uppercase">
+                                    {{ $miembro->estado_display }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     @if($miembro->estado_display === 'ATENDIENDO')
@@ -161,6 +166,28 @@
 
     <!-- Main Section -->
     <main class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Flash Messages -->
+        <div id="flash-alerts" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-md pointer-events-none">
+            @if(session('success'))
+            <div class="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce pointer-events-auto">
+                <i class="fa-solid fa-circle-check text-xl"></i>
+                <span class="font-bold text-sm">{{ session('success') }}</span>
+            </div>
+            @endif
+            @if(session('error'))
+            <div class="bg-rose-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce pointer-events-auto">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                <span class="font-bold text-sm">{{ session('error') }}</span>
+            </div>
+            @endif
+            @if(session('warning'))
+            <div class="bg-amber-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce pointer-events-auto">
+                <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                <span class="font-bold text-sm">{{ session('warning') }}</span>
+            </div>
+            @endif
+        </div>
         
         <!-- Header -->
         <header class="h-14 px-6 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-md z-20 sticky top-0">
@@ -359,6 +386,18 @@
         });
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashAlerts = document.getElementById('flash-alerts');
+            if (flashAlerts && flashAlerts.children.length > 0) {
+                setTimeout(() => {
+                    flashAlerts.style.transition = 'opacity 0.5s ease-out';
+                    flashAlerts.style.opacity = '0';
+                    setTimeout(() => flashAlerts.remove(), 500);
+                }, 5000);
+            }
+        });
+    </script>
     @yield('scripts')
 </body>
 </html>

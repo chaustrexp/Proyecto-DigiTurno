@@ -66,6 +66,7 @@ class ApiController extends Controller
                     ? asset($asesor->ase_foto)
                     : asset('images/foto de perfil asesor.png'),
                 'atnc_id'      => $atencionActual->atnc_id,
+                'atnc_veces_llamado' => $atencionActual->atnc_veces_llamado ?? 1,
                 'ciudadano'    => $atencionActual->turno->solicitante?->persona?->pers_nombres ?? 'Ciudadano',
             ];
         }

@@ -54,7 +54,9 @@
                 @php
                     $h_ini = is_string($atn->atnc_hora_inicio) ? \Carbon\Carbon::parse($atn->atnc_hora_inicio) : $atn->atnc_hora_inicio;
                     $h_fin = $atn->atnc_hora_fin ? (is_string($atn->atnc_hora_fin) ? \Carbon\Carbon::parse($atn->atnc_hora_fin) : $atn->atnc_hora_fin) : null;
-                    $duracionMin = $h_fin ? $h_ini->diffInMinutes($h_fin) : 0;
+                    $duracionSec = $h_fin ? $h_ini->diffInSeconds($h_fin) : 0;
+                    $duracionMin = $duracionSec / 60;
+                    $duracionFormated = $h_fin ? sprintf('%02d:%02d:%02d', floor($duracionSec/3600), floor(($duracionSec/60)%60), $duracionSec%60) : null;
                 @endphp
                 <tr class="hover:bg-gray-50/50 transition-colors group cursor-default">
                     <td class="px-10 py-8">
@@ -102,7 +104,7 @@
                     <td class="px-10 py-8">
                         @if($h_fin)
                         <div class="flex flex-col">
-                            <span class="text-xs font-black text-gray-800">{{ $duracionMin }} min</span>
+                            <span class="text-xs font-black text-gray-800">{{ $duracionFormated }}</span>
                             <div class="w-20 bg-gray-100 h-1 rounded-full mt-2 overflow-hidden">
                                 <div class="bg-sena-500 h-full rounded-full" style="width: {{ min(100, ($duracionMin / 20) * 100) }}%"></div>
                             </div>

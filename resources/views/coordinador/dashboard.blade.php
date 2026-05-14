@@ -112,8 +112,9 @@
                     <i class="fa-solid fa-chart-simple text-sena-blue text-lg"></i>
                     <h2 class="text-sm font-bold text-gray-900 tracking-wide uppercase">Monitor de Módulos (Torre de Control)</h2>
                 </div>
-                <div class="bg-sena-blue/10 text-sena-blue px-3 py-1 rounded-full text-[10px] font-black flex items-center tracking-wider">
-                    <span class="w-2 h-2 rounded-full bg-sena-blue mr-2 animate-pulse"></span> {{ $enAtencion }} Atendiendo
+                <div class="bg-gray-100 px-3 py-1 rounded-full text-[10px] font-black flex items-center tracking-wider space-x-2">
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-1 animate-pulse"></span> {{ $enAtencion }} Ocupado</span>
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span> Disponible</span>
                 </div>
             </div>
 
@@ -122,8 +123,8 @@
                 @foreach($asesoresStatus as $ase)
                 @php
                     $estado = strtoupper($ase['estado']);
-                    $color = $estado == 'ATENDIENDO' ? '#10069F' : ($estado == 'DESCANSO' ? '#FF671F' : '#6b7280');
-                    $timeLabel = $estado == 'ATENDIENDO' ? 'Sesión Actual' : ($estado == 'DESCANSO' ? 'Tiempo Descanso' : 'Tiempo Inactivo');
+                    $color = $estado == 'ATENDIENDO' ? '#ef4444' : ($estado == 'DESCANSO' ? '#fbbf24' : '#22c55e');
+                    $timeLabel = $estado == 'ATENDIENDO' ? 'Sesión Actual' : ($estado == 'DESCANSO' ? 'Tiempo Descanso' : 'Tiempo Disponible');
                     
                     // Tiempo transcurrido si está atendiendo
                     $timeText = '00:00 min';
@@ -165,7 +166,7 @@
         <div class="bg-white p-6 rounded-[1.5rem] shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)] border border-gray-100">
             <div class="flex items-center space-x-3 mb-6">
                 <i class="fa-solid fa-map-location-dot text-sena-blue text-lg"></i>
-                <h2 class="text-sm font-bold text-gray-900 tracking-wide uppercase">Distribución Geográfica de Sede</h2>
+                <h2 class="text-sm font-bold text-gray-900 tracking-wide uppercase">Distribución Geográfica - Norte de Santander</h2>
             </div>
             <div class="relative h-64 border-2 border-dashed border-gray-100 rounded-3xl flex items-center justify-center bg-gray-50/50 overflow-hidden">
                 <!-- Real Map Image -->
@@ -185,27 +186,30 @@
                     ];
                     $pos = $positions[$index % count($positions)];
                     
-                    $colorClass = 'bg-gray-400';
-                    $bgClass = 'bg-gray-100';
+                    $colorClass = 'bg-green-500';
+                    $bgClass = 'bg-green-50';
                     if(strtoupper($ase['estado']) == 'ATENDIENDO') {
-                        $colorClass = 'bg-sena-blue';
-                        $bgClass = 'bg-sena-blue/10';
+                        $colorClass = 'bg-red-500';
+                        $bgClass = 'bg-red-50';
                     } else if (strtoupper($ase['estado']) == 'DESCANSO') {
-                        $colorClass = 'bg-sena-orange';
-                        $bgClass = 'bg-sena-orange/10';
+                        $colorClass = 'bg-yellow-500';
+                        $bgClass = 'bg-yellow-50';
                     }
                 @endphp
                 <div id="pin-container-{{ $ase['modulo'] }}" class="absolute flex flex-col items-center justify-center group cursor-pointer" style="left: {{ $pos['left'] ?? 'auto' }}; top: {{ $pos['top'] ?? 'auto' }}; bottom: {{ $pos['bottom'] ?? 'auto' }}; z-index: 10;">
-                    <div id="pin-outer-{{ $ase['modulo'] }}" class="w-10 h-10 {{ $bgClass }} rounded-full flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition relative">
+                    <div id="pin-outer-{{ $ase['modulo'] }}" class="w-10 h-10 {{ $bgClass }} rounded-full flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition relative" title="{{ $ase['nombre'] }}">
                         <div id="pin-ping-{{ $ase['modulo'] }}" class="absolute inset-0 {{ $colorClass }} rounded-full animate-ping opacity-20 {{ strtoupper($ase['estado']) == 'ATENDIENDO' ? '' : 'hidden' }}"></div>
                         <div id="pin-inner-{{ $ase['modulo'] }}" class="w-3 h-3 {{ $colorClass }} rounded-full"></div>
                     </div>
-                    <span class="text-[9px] font-black text-gray-700 mt-2 bg-white px-2 py-1 rounded shadow-sm border border-gray-100">Mod {{ sprintf('%02d', $ase['modulo']) }}</span>
+                    <div class="mt-2 bg-white px-2 py-1 rounded shadow-lg border border-gray-100 flex flex-col items-center min-w-[80px]">
+                        <span id="pin-name-{{ $ase['modulo'] }}" class="text-[8px] font-black text-sena-blue uppercase text-center leading-none mb-0.5">{{ $ase['nombre'] }}</span>
+                        <span id="pin-sede-{{ $ase['modulo'] }}" class="text-[7px] font-bold text-gray-400 uppercase text-center leading-none">{{ $ase['sede'] ?? 'Sede Norte de Santander' }}</span>
+                    </div>
                 </div>
                 @endforeach
 
                 <!-- Legend -->
-                <div class="absolute bottom-4 right-4 bg-white p-4 rounded-2xl shadow-xl border border-gray-50 flex flex-col space-y-2 z-10 min-w-[120px]">
+                <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-50 flex flex-col space-y-2 z-10 min-w-[120px]">
                     <span class="text-[9px] font-black text-gray-900 border-b border-gray-50 pb-2 uppercase tracking-widest">Leyenda</span>
                     <div class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-sena-blue"></span><span class="text-[9px] font-bold text-gray-600">Activos</span></div>
                     <div class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-sena-orange"></span><span class="text-[9px] font-bold text-gray-600">Alerta</span></div>
@@ -450,21 +454,27 @@
                             pinPing.className = 'absolute inset-0 rounded-full animate-ping opacity-20';
 
                             if (mod.estado === 'ATENDIENDO') {
-                                pinOuter.classList.add('bg-sena-blue/10');
-                                pinInner.classList.add('bg-sena-blue');
-                                pinPing.classList.add('bg-sena-blue');
+                                pinOuter.classList.add('bg-red-50');
+                                pinInner.classList.add('bg-red-500');
+                                pinPing.classList.add('bg-red-500');
                                 pinPing.classList.remove('hidden');
                             } else if (mod.estado === 'DESCANSO') {
-                                pinOuter.classList.add('bg-sena-orange/10');
-                                pinInner.classList.add('bg-sena-orange');
-                                pinPing.classList.add('bg-sena-orange');
+                                pinOuter.classList.add('bg-yellow-50');
+                                pinInner.classList.add('bg-yellow-500');
+                                pinPing.classList.add('bg-yellow-500');
                                 pinPing.classList.add('hidden');
                             } else {
-                                pinOuter.classList.add('bg-gray-100');
-                                pinInner.classList.add('bg-gray-400');
+                                pinOuter.classList.add('bg-green-50');
+                                pinInner.classList.add('bg-green-500');
                                 pinPing.classList.add('hidden');
                             }
                         }
+
+                        // Actualizar Nombre y Sede
+                        const nameEl = document.getElementById(`pin-name-${mod.modulo}`);
+                        const sedeEl = document.getElementById(`pin-sede-${mod.modulo}`);
+                        if (nameEl) nameEl.textContent = mod.nombre;
+                        if (sedeEl) sedeEl.textContent = mod.sede || 'Norte de Santander';
                     });
                 }
             }
