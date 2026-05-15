@@ -365,7 +365,7 @@ class CoordinadorController extends Controller
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $tel . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0;">' . $asesorNom . '</td>';
             $html .= '<td style="border: 1px solid #e2e8f0; background-color:#f1f5f9;">' . $modulo . '</td>';
-            $html .= '<td style="border: 1px solid #e2e8f0; font-size:9px; text-align:left;">' . ($t->atencion->atnc_observaciones ?? '-') . '</td>';
+            $html .= '<td style="border: 1px solid #e2e8f0; font-size:9px; text-align:left;">' . ($t->atencion->observaciones ?? '-') . '</td>';
             $html .= '</tr>';
         }
 

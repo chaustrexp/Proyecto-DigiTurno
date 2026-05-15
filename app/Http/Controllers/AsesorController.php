@@ -390,7 +390,7 @@ class AsesorController extends Controller
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; mso-number-format:\'\@\'; padding:4px 8px; font-size:10px;">' . $f_atencion . '</td>';
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; padding:4px 8px; font-size:10px;">' . ($atn->atnc_veces_llamado ?? 1) . '</td>';
                 $html .= '<td style="border:1px solid #e5e7eb; text-align:center; font-weight:bold; color:' . $estadoColor . '; background-color:' . $estadoBg . '; padding:4px 8px; font-size:10px;">' . $estado . '</td>';
-                $html .= '<td style="border:1px solid #e5e7eb; font-size:9px; padding:4px 8px;">' . ($atn->atnc_observaciones ?? '-') . '</td>';
+                $html .= '<td style="border:1px solid #e5e7eb; font-size:9px; padding:4px 8px;">' . ($atn->observaciones ?? '-') . '</td>';
                 $html .= '</tr>';
                 $row++;
             }

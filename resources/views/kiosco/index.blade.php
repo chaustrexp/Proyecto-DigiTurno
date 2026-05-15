@@ -712,7 +712,7 @@ async function consultarTurno() {
     </div>`;
 
     try {
-        const response = await fetch(`/api/turno/consultar/${doc}`);
+        const response = await fetch(`{{ url('api/turno/consultar') }}/${doc}`);
         const data = await response.json();
 
         if (data.success) {
