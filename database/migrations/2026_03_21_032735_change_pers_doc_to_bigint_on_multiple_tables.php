@@ -12,10 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. Eliminar llaves foráneas existentes
-        DB::statement('ALTER TABLE `asesor` DROP FOREIGN KEY `asesor_ibfk_1`');
-        DB::statement('ALTER TABLE `coordinador` DROP FOREIGN KEY `coordinador_ibfk_1`');
-        DB::statement('ALTER TABLE `solicitante` DROP FOREIGN KEY `solicitante_ibfk_1`');
+        // 1. Eliminar llaves foráneas existentes (con try/catch por si los nombres de FK son diferentes en migrate:fresh)
+        try { DB::statement('ALTER TABLE `asesor` DROP FOREIGN KEY `asesor_ibfk_1`'); } catch (\Exception $e) {}
+        try { DB::statement('ALTER TABLE `coordinador` DROP FOREIGN KEY `coordinador_ibfk_1`'); } catch (\Exception $e) {}
+        try { DB::statement('ALTER TABLE `solicitante` DROP FOREIGN KEY `solicitante_ibfk_1`'); } catch (\Exception $e) {}
+
+        try { DB::statement('ALTER TABLE `asesor` DROP FOREIGN KEY `asesor_persona_pers_doc_foreign`'); } catch (\Exception $e) {}
+        try { DB::statement('ALTER TABLE `coordinador` DROP FOREIGN KEY `coordinador_persona_pers_doc_foreign`'); } catch (\Exception $e) {}
+        try { DB::statement('ALTER TABLE `solicitante` DROP FOREIGN KEY `solicitante_persona_pers_doc_foreign`'); } catch (\Exception $e) {}
+
 
         // 2. Cambiar tipos de datos a BIGINT UNSIGNED
         DB::statement('ALTER TABLE `persona` MODIFY `pers_doc` BIGINT UNSIGNED NOT NULL');
